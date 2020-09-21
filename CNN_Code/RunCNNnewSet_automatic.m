@@ -12,6 +12,7 @@ function [conelocs] = RunCNNnewSet_automatic(DataSet, ImageDir, boxposition, I)
 % network and parameters
 
 
+disp('Set-up MatConVNet');
 % Set-up MatConVNetPaths
 BasePath = GetRootPath();
 % BasePath = 'C:\Users\Jenny\Documents\MATLAB\CNN-Cone-Detection';
@@ -22,7 +23,8 @@ run(fullfile(MatConvNetPath,'matlab','vl_setupnn.m'))
 % DataSet = 'confocal'; % original cases: 'confocal' or 'split detector'
 %%%% DataSet = '14111';
 % load in parameters
- params = get_parameters_Cone_CNN(DataSet);
+disp('load in parameters');
+params = get_parameters_Cone_CNN(DataSet);
 
  
 % Choose Folder of images to detect cones in
@@ -36,7 +38,8 @@ ImExtension = '.tif';
 
  
 %  SaveNewSetCones_automatic(params,ImageDir,ImExtension,SaveDir)
- [conelocs] = SaveNewSetCones_automatic(params,ImageDir,ImExtension,boxposition,I);
+disp('start cones recognision');
+[conelocs] = SaveNewSetCones_automatic(params,ImageDir,ImExtension,boxposition,I);
 
 end
 

@@ -9,14 +9,11 @@ function [conelocs] = SaveNewSetCones_automatic(params,ImageDir,ImExtension,boxp
 % Get half patch size
 HalfPatchSize = ceil((params.PatchSize-1)./2);
 
-
-
- % load in the Net
+% load in the Net
 load(params.ProbMap.NetworkPath)
 
 net = vl_simplenn_move(net, 'gpu');
 net.layers{end}.type = 'softmax';
-
 
 % Set detection parameters based on optimization
 load(params.Results.OptimizationPath)
@@ -24,8 +21,6 @@ load(params.Results.OptimizationPath)
 ProbParam.PMsigma = OptParam.MaxSigma;
 ProbParam.PMthresh = OptParam.MaxPMthresh;
 ProbParam.ExtMaxH = OptParam.MaxExtMaxH;
- 
- 
 
 originalSize = size(I,1);
 newSize = 150;
@@ -35,11 +30,10 @@ cutoutsINrow = ceil(originalSize/newSize);      % calculate minimum numer of cut
 offset = (cutoutsINrow*newSize-originalSize)/(cutoutsINrow-1);
 
 while offset < 20
-    
     cutoutsINrow = cutoutsINrow+1;
     offset = round((cutoutsINrow*newSize-originalSize)/(cutoutsINrow-1));      % offset which will be applied for a fix number of cutouts in a row/column
-end    
-    
+end
+
 numCutouts = cutoutsINrow*cutoutsINrow;
 Cutout = 1;
 conelocs = [];
@@ -51,45 +45,45 @@ for y_cutout = 1:cutoutsINrow
     for x_cutout = 1:cutoutsINrow
         
         % create patches of 150x150 pixel
-
+        
         positions_start = [1 newSize-offset:newSize-1-offset:((newSize-1)*cutoutsINrow-offset*cutoutsINrow)];
         positions_end = positions_start+(newSize-1);
-
+        
         x_start = positions_start(x_cutout);
         y_start = positions_start(y_cutout);
         x_end = positions_end(x_cutout);
         y_end = positions_end(y_cutout);
-
+        
         cutout150 = I(y_start:y_end,x_start:x_end);
         Image = mat2gray(cutout150);
-%         imageSize = size(cutout150);
+        %         imageSize = size(cutout150);
         
         
-        % Get the cone positions; 
+        % Get the cone positions;
         [CNNPos]= GetConePosSingle(params,Image,net,ProbParam);
-
         
-         if isempty(CNNPos)
-             % skip this cutout
-         else
-                CNNPos(CNNPos(:,1)<=floor(offset/2),:)         = [];
-                CNNPos(CNNPos(:,1)>=newSize-floor(offset/2),:) = [];
-                CNNPos(CNNPos(:,2)<=floor(offset/2),:)         = [];
-                CNNPos(CNNPos(:,2)>=newSize-floor(offset/2),:) = [];
-
-                correct_xy = [ones(size(CNNPos,1),1)*(x_start-1), ones(size(CNNPos,1),1)*(y_start-1)];
-
-                CNNPos_I = CNNPos+correct_xy;
-        %         CNNPos_I(:,1) = CNNPos(:,1)+correct_x;
-        %         CNNPos_I(:,2) = CNNPos(:,2)+correct_y;
-
-                conelocs = [conelocs; CNNPos_I];
-                
-         end
+        
+        if isempty(CNNPos)
+            % skip this cutout
+        else
+            CNNPos(CNNPos(:,1)<=floor(offset/2),:)         = [];
+            CNNPos(CNNPos(:,1)>=newSize-floor(offset/2),:) = [];
+            CNNPos(CNNPos(:,2)<=floor(offset/2),:)         = [];
+            CNNPos(CNNPos(:,2)>=newSize-floor(offset/2),:) = [];
+            
+            correct_xy = [ones(size(CNNPos,1),1)*(x_start-1), ones(size(CNNPos,1),1)*(y_start-1)];
+            
+            CNNPos_I = CNNPos+correct_xy;
+            %         CNNPos_I(:,1) = CNNPos(:,1)+correct_x;
+            %         CNNPos_I(:,2) = CNNPos(:,2)+correct_y;
+            
+            conelocs = [conelocs; CNNPos_I];
+        end
         
         Cutout = Cutout+1;
+        
+        waitbar(((y_cutout - 1) * cutoutsINrow + x_cutout) / (numCutouts))
     end
-        waitbar(y_cutout/cutoutsINrow)
 end
 
 close(h)
@@ -100,7 +94,6 @@ multiple_mosaics = 0;
 % if(~exist(SaveDir,'dir'))
 % mkdir(SaveDir);
 % end
-
 
 
 % [~,BaseName] = fileparts(ImageList{iFile});
