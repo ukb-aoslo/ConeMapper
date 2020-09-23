@@ -38,7 +38,6 @@ ImExtension = '.tif';
 
  
 %  SaveNewSetCones_automatic(params,ImageDir,ImExtension,SaveDir)
-disp('start cones recognision');
 [conelocs] = SaveNewSetCones_automatic(params,ImageDir,ImExtension,boxposition,I);
 
 end

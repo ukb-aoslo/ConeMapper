@@ -12,8 +12,11 @@ HalfPatchSize = ceil((params.PatchSize-1)./2);
 % load in the Net
 load(params.ProbMap.NetworkPath)
 
+disp('Move CNN to GPU (can be up to 10 mins)');
 net = vl_simplenn_move(net, 'gpu');
 net.layers{end}.type = 'softmax';
+
+disp('start cones recognision');
 
 % Set detection parameters based on optimization
 load(params.Results.OptimizationPath)

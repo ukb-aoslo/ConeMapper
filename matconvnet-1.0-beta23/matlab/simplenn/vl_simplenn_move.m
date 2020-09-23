@@ -17,11 +17,15 @@ switch destination
   case 'cpu', moveop = @(x) gather(x) ;
   otherwise, error('Unknown destination ''%s''.', destination) ;
 end
+
+h = waitbar(0,'Move CNN...');
+size = numel(net.layers);
+
 for l=1:numel(net.layers)
   switch net.layers{l}.type
     case {'conv', 'convt', 'bnorm'}
       for f = {'filters', 'biases', 'filtersMomentum', 'biasesMomentum'}
-        f = char(f) ;
+        f = char(f);
         if isfield(net.layers{l}, f)
           net.layers{l}.(f) = moveop(net.layers{l}.(f)) ;
         end
@@ -37,4 +41,7 @@ for l=1:numel(net.layers)
     otherwise
       % nothing to do ?
   end
+  waitbar(l / size);
 end
+
+close(h);
