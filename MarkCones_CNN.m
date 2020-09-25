@@ -448,7 +448,7 @@ while cont == 1
             I_log = I_log - min(I_INbox(:));
             I_log = I_log./max(I_log(:));
             
-            cla; a1 = imshow(I-log); hold on;
+            cla; a1 = imshow(I_log); hold on;
             rectangle('Position',boxposition,'EdgeColor',[1 0 1]);
                 plot(conelocs(conelocs(:,3)~=0,1),conelocs(conelocs(:,3)~=0,2),'.y', 'MarkerSize', Marker_Size)
             log_image = 0;    
