@@ -68,12 +68,12 @@ Avaliable types is Dot, Circle and Cross.
 
 The types of cone locations that should be shown.
 Auto + User - show both types.
-Userdetect - show only user detected cone locations.
-Userdetect - show only auto detected cone locations.
+Userdetect - show only user detected cone locations. Works only inside the box.
+Autodetect - show only auto detected cone locations. Works only inside the box.
 
 #### Highlight Autodetected Cones Switch
 
-Highlight autodetected cones by magenta color.
+Highlight autodetected cones by magenta color. Works only inside the box.
 
 #### Show Marked Locations Switch
 
