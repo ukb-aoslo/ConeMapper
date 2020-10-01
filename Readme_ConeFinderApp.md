@@ -93,8 +93,29 @@ Mouse Right Click - remove the mark
 '-'               - zoom out
 ↓ ↑  ← →          - pan image
 Esc               - turn off Edit Mode
+D, B              - darken/brighten image
+R                 - reset brightness
+L                 - apply log filter
+I                 - show image
+T                 - show marks
+C, X, Z           - circle/cross/dot cone marks
+1, 2, 3           - auto/user/auto+user detected cone locations
+0                 - highlight autodetected marks
+Q                 - show grid
+E                 - show grid number
+SPACE             - save current locations
+Del (entf)        - delete selected cone locations
+V                 - voronoi diagram for 'Cone Area'
+N                 - voronoi diagram for 'Number of Neighbors'
+
 
 Warning! Hotkeys is working only in edit mode. Unfortunately, MatLab R2016b App Designer does not have necessary callbacks to make hotkeys.
+Warning!! In Edit Mode, when voronoi diagram is ploted, only next operations are allowed: 
+    - Zoom In/Out, 
+    - Pan image, 
+    - turn off Edit Mode, 
+    - Save Current Locations
+Press again V or N to turn off the voronoi diagram.
 
 #### Change Box Size Button
 
