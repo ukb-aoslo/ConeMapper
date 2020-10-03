@@ -17,6 +17,10 @@ switch destination
   case 'cpu', moveop = @(x) gather(x) ;
   otherwise, error('Unknown destination ''%s''.', destination) ;
 end
+
+h = waitbar(0,'Move CNN...');
+size = numel(net.layers);
+
 for l=1:numel(net.layers)
   switch net.layers{l}.type
     case {'conv', 'convt', 'bnorm'}
@@ -37,4 +41,8 @@ for l=1:numel(net.layers)
     otherwise
       % nothing to do ?
   end
+  waitbar(l / size);
 end
+
+close(h);
+
