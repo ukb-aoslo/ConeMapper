@@ -9,15 +9,19 @@
 % http://www.vlfeat.org/matconvnet/quick/)
 
 % Make sure matconvnet is in the search path (can be added manually or by
-% running vl_setupnn.m in MatConvNet\matconvnet-1.0-beta23\matconvnet-1.0-beta23\matlab)
+% running vl_setupnn.m in MatConvNet\matconvnet-1.0-beta25cpu\matconvnet-1.0-beta25cpu\matlab)
 
 clear
 close all
 
+[ cnnFloderName, cnnCalcType, isCanceled ] = SelectVersionCNN();
+if isCanceled
+    return;
+end
 
 % Set-up MatConVNetPaths
 BasePath = GetRootPath();
-MatConvNetPath = fullfile(BasePath,'matconvnet-1.0-beta23');
+MatConvNetPath = fullfile(BasePath,cnnFloderName);
 run(fullfile(MatConvNetPath,'matlab','vl_setupnn.m'))
 
 
@@ -61,13 +65,13 @@ save (params.CNN.imdbPath,'-v7.3','images','meta')
 % number of gpus to use
 gpus = 1; 
  
-cnn_Cones(gpus,params);
+cnn_Cones(gpus,params, cnnCalcType);
 
 %% Save Probability Maps for training and validation data sets
 TrainFlag = 1; % Save training data probability maps
 ValidateFlag = 1; % Save Validation data probability maps (necesary for SaveValidationCones.m)
 
-SaveProbabilityMaps(params,TrainFlag,ValidateFlag)
+SaveProbabilityMaps(params,TrainFlag,ValidateFlag, cnnCalcType)
 
 %% Find best combination of detection parameters
 OptomizeConeDetectionParameters(params)
@@ -96,7 +100,7 @@ DataSet = 'split detector_combined cnn';
 TrainFlag = 1; % Save training data probability maps
 ValidateFlag = 1; % Save Validation data probability maps (necesary for SaveValidationCones.m)
 
-SaveProbabilityMaps(params,TrainFlag,ValidateFlag)
+SaveProbabilityMaps(params,TrainFlag,ValidateFlag, cnnCalcType)
 
 %% Find best combination of detection parameters
 OptomizeConeDetectionParameters(params)

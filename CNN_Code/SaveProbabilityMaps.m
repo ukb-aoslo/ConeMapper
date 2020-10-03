@@ -3,7 +3,7 @@
 % Released under a GPL v2 license.
 
 
-function SaveProbabilityMaps(params,TrainFlag,ValidateFlag)
+function SaveProbabilityMaps(params,TrainFlag,ValidateFlag, cnnCalcType)
 % Function to save probability Maps from CNN to allow for quicker
 % optimization of detection parameters
 % Set TrainFlag/ValidateFlag to 0 to not generate probability maps
@@ -26,9 +26,14 @@ HalfPatchSize = ceil((params.PatchSize-1)./2);
 % load in the Net
 load(params.ProbMap.NetworkPath)
 
-net = vl_simplenn_move(net, 'gpu');
+net = vl_simplenn_move(net, cnnCalcType);
 net.layers{end}.type = 'softmax';
 
+
+isGpuUsed = 1;
+if strcmp(cnnCalcType, 'cpu')
+    isGpuUsed = 0;
+end
 
 
 if(TrainFlag)
@@ -74,7 +79,12 @@ for iFile = 1:numFiles
         batchStart = Iter_num ;
         batchEnd = min(Iter_num+params.ProbMap.batchsize-1,NumPatches) ;
         batch = batchStart : 1 : batchEnd ;
-        res_temp = vl_simplenn(net, gpuArray(single(test_patches(:,:,:,batch))),[],[],'mode','test');
+        if isGpuUsed
+            resized_test_patches = gpuArray(single(test_patches(:,:,:,batch)));
+        else
+            resized_test_patches = single(test_patches(:,:,:,batch));
+        end
+        res_temp = vl_simplenn(net, resized_test_patches,[],[],'mode','test');
         Prob_temp = squeeze(gather(res_temp(end).x)) ;
         Prob_temp(3:end,:) = [];
         Test_Probability = [Test_Probability Prob_temp ];
@@ -139,7 +149,12 @@ for iFile = 1:numFiles
         batchStart = Iter_num ;
         batchEnd = min(Iter_num+params.ProbMap.batchsize-1,NumPatches) ;
         batch = batchStart : 1 : batchEnd ;
-        res_temp = vl_simplenn(net, gpuArray(single(test_patches(:,:,:,batch))),[],[],'mode','test');
+        if isGpuUsed
+            resized_test_patches = gpuArray(single(test_patches(:,:,:,batch)));
+        else
+            resized_test_patches = single(test_patches(:,:,:,batch));
+        end
+        res_temp = vl_simplenn(net, resized_test_patches,[],[],'mode','test');
         Prob_temp = squeeze(gather(res_temp(end).x)) ;
         Prob_temp(3:end,:) = [];
         Test_Probability = [Test_Probability Prob_temp ];

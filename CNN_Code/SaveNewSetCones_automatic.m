@@ -3,7 +3,7 @@
 % Released under a GPL v2 license.
 
 
-function [conelocs] = SaveNewSetCones_automatic(params,ImageDir,ImExtension,boxposition,I)
+function [conelocs] = SaveNewSetCones_automatic(params,ImageDir,ImExtension,boxposition,I, cnnCalcType)
 % function to find cones using pretrained CNN on new images
 
 % Get half patch size
@@ -12,8 +12,8 @@ HalfPatchSize = ceil((params.PatchSize-1)./2);
 % load in the Net
 load(params.ProbMap.NetworkPath)
 
-disp('Move CNN to GPU (can be up to 10 mins)');
-net = vl_simplenn_move(net, 'gpu');
+disp(strcat('Move CNN to:  ', cnnCalcType, '. (can be up to 10 mins)'));
+net = vl_simplenn_move(net, cnnCalcType);
 net.layers{end}.type = 'softmax';
 
 disp('start cones recognision');
@@ -63,7 +63,7 @@ for y_cutout = 1:cutoutsINrow
         
         
         % Get the cone positions;
-        [CNNPos]= GetConePosSingle(params,Image,net,ProbParam);
+        [CNNPos]= GetConePosSingle(params,Image,net,ProbParam, cnnCalcType);
         
         
         if isempty(CNNPos)

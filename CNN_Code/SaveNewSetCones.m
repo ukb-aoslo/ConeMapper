@@ -3,7 +3,7 @@
 % Released under a GPL v2 license.
 
 
-function SaveNewSetCones(params,NewDir,ImExtension,SaveDir)
+function SaveNewSetCones(params,NewDir,ImExtension,SaveDir, cnnCalcType)
 % function to find cones using pretrained CNN on new images
 
 % Get half patch size
@@ -14,7 +14,7 @@ HalfPatchSize = ceil((params.PatchSize-1)./2);
  % load in the Net
 load(params.ProbMap.NetworkPath)
 
-net = vl_simplenn_move(net, 'gpu');
+net = vl_simplenn_move(net, cnnCalcType);
 net.layers{end}.type = 'softmax';
 
 
@@ -48,7 +48,7 @@ for iFile = 1:numFiles
     Image = imread(fullfile(NewDir,ImageList{iFile}));
 
     % Get the cone positions; 
-    [CNNPos]= GetConePosSingle(params,Image,net,ProbParam);
+    [CNNPos]= GetConePosSingle(params,Image,net,ProbParam, cnnCalcType);
 
     
     

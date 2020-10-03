@@ -6,10 +6,14 @@
 % Example code for Getting cone position using trained network and
 % displaying it
 
+[ cnnFloderName, cnnCalcType, isCanceled ] = SelectVersionCNN();
+if isCanceled
+    return;
+end
 
 % Set-up MatConVNetPaths
-BasePath = GetRootPath();
-MatConvNetPath = fullfile(BasePath,'matconvnet-1.0-beta23');
+BasePath = GetRootPath();           
+MatConvNetPath = fullfile(BasePath, cnnFloderName);
 run(fullfile(MatConvNetPath,'matlab','vl_setupnn.m'))
 
 
@@ -28,12 +32,8 @@ ImageList =  {ImageList.name};
 iFile = 32;
 Image = imread(fullfile(params.ImageDirValidate,ImageList{iFile}));
 
-
-
-
-
 % Get cone positions
-[CNNPos]=GetConePosSingle(params,Image);
+[CNNPos]=GetConePosSingle(params,Image, ProbParam, cnnCalcType);
 
 
 % display marked image

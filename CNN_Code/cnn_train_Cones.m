@@ -1,4 +1,4 @@
-function [net, stats] = cnn_train_Cones(net, imdb, getBatch, varargin)
+function [net, stats] = cnn_train_Cones(net, imdb, getBatch, cnnCalcType, varargin)
 %CNN_TRAIN  An example implementation of SGD for training CNNs
 %    CNN_TRAIN() is an example learner implementing stochastic
 %    gradient descent with momentum to train a CNN. It can be used
@@ -152,16 +152,16 @@ for epoch=start+1:opts.numEpochs
   params.getBatch = getBatch ;
 
   if numel(params.gpus) <= 1
-    [net, state] = processEpoch(net, state, params, 'train') ;
-    [net, state] = processEpoch(net, state, params, 'val') ;
+    [net, state] = processEpoch(net, state, params, 'train', cnnCalcType) ;
+    [net, state] = processEpoch(net, state, params, 'val', cnnCalcType) ;
     if ~evaluateMode
       saveState(modelPath(epoch), net, state) ;
     end
     lastStats = state.stats ;
   else
     spmd
-      [net, state] = processEpoch(net, state, params, 'train') ;
-      [net, state] = processEpoch(net, state, params, 'val') ;
+      [net, state] = processEpoch(net, state, params, 'train', cnnCalcType) ;
+      [net, state] = processEpoch(net, state, params, 'val', cnnCalcType) ;
       if labindex == 1 && ~evaluateMode
         saveState(modelPath(epoch), net, state) ;
       end
@@ -246,7 +246,7 @@ function err = error_none(params, labels, res)
 err = zeros(0,1) ;
 
 % -------------------------------------------------------------------------
-function [net, state] = processEpoch(net, state, params, mode)
+function [net, state] = processEpoch(net, state, params, mode, cnnCalcType)
 % -------------------------------------------------------------------------
 % Note that net is not strictly needed as an output argument as net
 % is a handle class. However, this fixes some aliasing issue in the
@@ -264,7 +264,7 @@ end
 % move CNN  to GPU as needed
 numGpus = numel(params.gpus) ;
 if numGpus >= 1
-  net = vl_simplenn_move(net, 'gpu') ;
+  net = vl_simplenn_move(net, cnnCalcType) ;
   for i = 1:numel(state.momentum)
     for j = 1:numel(state.momentum{i})
       state.momentum{i}{j} = gpuArray(state.momentum{i}{j}) ;
@@ -429,7 +429,7 @@ else
   end
 end
 
-net = vl_simplenn_move(net, 'cpu') ;
+net = vl_simplenn_move(net, cnnCalcType) ;
 
 % -------------------------------------------------------------------------
 function [net, res, state] = accumulateGradients(net, res, state, params, batchSize, parserv)

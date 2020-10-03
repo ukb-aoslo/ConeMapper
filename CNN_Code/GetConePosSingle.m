@@ -3,14 +3,14 @@
 % Released under a GPL v2 license.
 
 
-function [CNNPos]=GetConePosSingle(params,Image,net,ProbParam)
+function [CNNPos]=GetConePosSingle(params,Image,net,ProbParam, cnnCalcType)
 % Function to find cone positions using pretrained network and optimization
 % parameters
 
  % load in the Net if nothing was passed
 if nargin<3
     load(params.ProbMap.NetworkPath)
-    net = vl_simplenn_move(net, 'gpu');
+    net = vl_simplenn_move(net, cnnCalcType);
     net.layers{end}.type = 'softmax';
 end
 
@@ -42,11 +42,22 @@ HalfPatchSize = ceil((params.PatchSize-1)./2);
     % Use CNN to find probability for each patch 
     NumPatches = size(test_patches,4);
     Test_Probability = [];
+    
+    isGpuUsed = 1;
+    if strcmp(cnnCalcType, 'cpu')
+        isGpuUsed = 0;
+    end
+    
     for Iter_num = 1:params.ProbMap.batchsize:NumPatches
         batchStart = Iter_num ;
         batchEnd = min(Iter_num+params.ProbMap.batchsize-1,NumPatches) ;
         batch = batchStart : 1 : batchEnd ;
-        res_temp = vl_simplenn(net, gpuArray(single(test_patches(:,:,:,batch))),[],[],'mode','test');
+        if isGpuUsed
+            resized_test_patches = gpuArray(single(test_patches(:,:,:,batch)));
+        else
+            resized_test_patches = single(test_patches(:,:,:,batch));
+        end
+        res_temp = vl_simplenn(net, resized_test_patches,[],[],'mode','test');
         Prob_temp = squeeze(gather(res_temp(end).x)) ;
         Prob_temp(3:end,:) = [];
         Test_Probability = [Test_Probability Prob_temp ];

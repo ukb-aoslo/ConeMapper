@@ -661,6 +661,10 @@ while cont == 1
     
     % toggle Voronoi plot
     if button==118 %'V'
+                    cla; a1 = imshow(I); hold on;
+            voronoi_type = questdlg('Select coloring for Voronoi patches', 'Coloring Voronois', 'Cone Area', ...
+                    'Number of Neighbors', 'Cone Area');
+                tic;
         numcolors = 25;  % ********* change from 15 
 %         max_area_pixel = 150;        % basis for dividing cone Area through numcolors
         max_area_pixel = 80;        % basis for dividing cone Area through numcolors
@@ -678,9 +682,7 @@ while cont == 1
         neighcolorsNN = flipud(neighcolorsNN);
         
         if voronoiplot
-            cla; a1 = imshow(I); hold on;
-            voronoi_type = questdlg('Select coloring for Voronoi patches', 'Coloring Voronois', 'Cone Area', ...
-                    'Number of Neighbors', 'Cone Area');
+
             % Calculate num neighbours from Voronoi diagram
             if size(conelocs,1)>3
                 
@@ -730,6 +732,7 @@ while cont == 1
             rectangle('Position',boxposition,'EdgeColor',[1 0 1]);
             voronoiplot=1;
         end
+        toc;
     end
     
     

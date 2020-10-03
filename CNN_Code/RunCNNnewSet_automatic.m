@@ -1,7 +1,9 @@
-function [conelocs] = RunCNNnewSet_automatic(DataSet, ImageDir, boxposition, I)
+function [conelocs] = RunCNNnewSet_automatic(DataSet, ImageDir, boxposition, I, cnnCalcType, cnnFloderName)
 % function for implementation of UNTITLED2 Summary of this function goes here
 %%%% marked lines were originally desiged for adjusting arguments/values in this script 
 
+% cnnCalcType can be 'gpu' / 'cpu'
+% cnnFloderName can be 'matconvnet-1.0-beta23' / 'matconvnet-1.0-beta23cpu' / 'matconvnet-1.0-beta25' / 'matconvnet-1.0-beta25cpu'
 
 % Please cite this paper if you use any component of this software:
 % D. Cunefare, L. Fang, R.F. Cooper, A. Dubra, J. Carroll, S. Farsiu, "Open source software for automatic detection of cone photoreceptors in adaptive optics ophthalmoscopy using convolutional neural networks," Scientific Reports, 7, 6620, 2017.
@@ -12,11 +14,11 @@ function [conelocs] = RunCNNnewSet_automatic(DataSet, ImageDir, boxposition, I)
 % network and parameters
 
 
-disp('Set-up MatConVNet');
+disp(strcat('Set-up MatConVNet. Folder: ', cnnFloderName, '. Type: ', cnnCalcType));
 % Set-up MatConVNetPaths
 BasePath = GetRootPath();
 % BasePath = 'C:\Users\Jenny\Documents\MATLAB\CNN-Cone-Detection';
-MatConvNetPath = fullfile(BasePath,'matconvnet-1.0-beta23');
+MatConvNetPath = fullfile(BasePath, cnnFloderName);
 run(fullfile(MatConvNetPath,'matlab','vl_setupnn.m'))
 
 % choose dataset with already trained cnn and detection parameters
@@ -38,7 +40,7 @@ ImExtension = '.tif';
 
  
 %  SaveNewSetCones_automatic(params,ImageDir,ImExtension,SaveDir)
-[conelocs] = SaveNewSetCones_automatic(params,ImageDir,ImExtension,boxposition,I);
+[conelocs] = SaveNewSetCones_automatic(params,ImageDir,ImExtension,boxposition,I, cnnCalcType);
 
 end
 

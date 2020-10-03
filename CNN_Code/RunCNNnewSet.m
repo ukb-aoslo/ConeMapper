@@ -7,10 +7,14 @@
 % network and parameters
 
 time_start = clock;
+[ cnnFloderName, cnnCalcType, isCanceled ] = SelectVersionCNN();
+if isCanceled
+    return;
+end
 
 % Set-up MatConVNetPaths
 BasePath = GetRootPath();
-MatConvNetPath = fullfile(BasePath,'matconvnet-1.0-beta23');
+MatConvNetPath = fullfile(BasePath,cnnFloderName);
 run(fullfile(MatConvNetPath,'matlab','vl_setupnn.m'))
 
 % choose dataset with already trained cnn and detection parameters
@@ -24,20 +28,21 @@ DataSet = 'g1+cunefare';
 % load in parameters
  params = get_parameters_Cone_CNN(DataSet);
 
- 
 % Choose Folder of images to detect cones in
-ImageDir =  'C:\Users\Jenny\Documents\MATLAB\CNN-Cone-Detection\Images and Results\Confocal\Test Images_150';
+ImageDir =  fullfile(BasePath, 'Images and Results\Confocal\Test_Images_150');
+% 'C:\Users\Jenny\Documents\MATLAB\CNN-Cone-Detection\Images and Results\Confocal\Test Images_150';
 
 % format of images (must be readable by imread, must be 2D/grayscale format)
 ImExtension = '.tif';
 
 % Choose Folder to save coordinate
-SaveDir = 'C:\Users\Jenny\Documents\MATLAB\CNN-Cone-Detection\Images and Results\Confocal\Test CNNcoord 42';
+SaveDir = fullfile(BasePath, 'Images and Results\Confocal\Test_CNNcoord_42');
+% 'C:\Users\Jenny\Documents\MATLAB\CNN-Cone-Detection\Images and Results\Confocal\Test CNNcoord 42';
 
 
 
  
- SaveNewSetCones(params,ImageDir,ImExtension,SaveDir)
+ SaveNewSetCones(params,ImageDir,ImExtension,SaveDir, cnnCalcType)
  
  time_start
  time_finished = clock
