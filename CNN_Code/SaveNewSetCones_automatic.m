@@ -25,67 +25,72 @@ ProbParam.PMsigma = OptParam.MaxSigma;
 ProbParam.PMthresh = OptParam.MaxPMthresh;
 ProbParam.ExtMaxH = OptParam.MaxExtMaxH;
 
-originalSize = size(I,1);
+originalSizeX = size(I,2);
+originalSizeY = size(I,1);
 newSize = 150;
 
-cutoutsINrow = ceil(originalSize/newSize);      % calculate minimum numer of cutouts to produce
+cutoutsINrowX = ceil(originalSizeX/newSize);      % calculate minimum numer of cutouts to produce
+cutoutsINrowY = ceil(originalSizeY/newSize);
 
-offset = (cutoutsINrow*newSize-originalSize)/(cutoutsINrow-1);
+offsetX = (cutoutsINrowX*newSize-originalSizeX)/(cutoutsINrowX-1);
 
-while offset < 20
-    cutoutsINrow = cutoutsINrow+1;
-    offset = round((cutoutsINrow*newSize-originalSize)/(cutoutsINrow-1));      % offset which will be applied for a fix number of cutouts in a row/column
+while offsetX < 20
+    cutoutsINrowX = cutoutsINrowX+1;
+    offsetX = round((cutoutsINrowX*newSize-originalSizeX)/(cutoutsINrowX-1));      % offset which will be applied for a fix number of cutouts in a row/column
 end
 
-numCutouts = cutoutsINrow*cutoutsINrow;
+offsetY = (cutoutsINrowY*newSize-originalSizeY)/(cutoutsINrowY-1);
+
+while offsetY < 20
+    cutoutsINrowY = cutoutsINrowY+1;
+    offsetY = round((cutoutsINrowY*newSize-originalSizeY)/(cutoutsINrowY-1));      % offset which will be applied for a fix number of cutouts in a row/column
+end
+
+numCutouts = cutoutsINrowX*cutoutsINrowY;
 Cutout = 1;
 conelocs = [];
 
-h = waitbar(0,'CNN locations...');
-steps = cutoutsINrow;
+positions_startX = [1 newSize-offsetX:newSize-1-offsetX:((newSize-1)*cutoutsINrowX-offsetX*cutoutsINrowX)];
+positions_endX = positions_startX+(newSize-1);
 
-for y_cutout = 1:cutoutsINrow
-    for x_cutout = 1:cutoutsINrow
+positions_startY = [1 newSize-offsetY:newSize-1-offsetY:((newSize-1)*cutoutsINrowY-offsetY*cutoutsINrowY)];
+positions_endY = positions_startY+(newSize-1);
+
+h = waitbar(0,'CNN locations...');
+
+for y_cutout = 1:cutoutsINrowY
+    for x_cutout = 1:cutoutsINrowX
         
         % create patches of 150x150 pixel
-        
-        positions_start = [1 newSize-offset:newSize-1-offset:((newSize-1)*cutoutsINrow-offset*cutoutsINrow)];
-        positions_end = positions_start+(newSize-1);
-        
-        x_start = positions_start(x_cutout);
-        y_start = positions_start(y_cutout);
-        x_end = positions_end(x_cutout);
-        y_end = positions_end(y_cutout);
+        x_start = positions_startX(x_cutout);
+        y_start = positions_startY(y_cutout);
+        x_end = positions_endX(x_cutout);
+        y_end = positions_endY(y_cutout);
         
         cutout150 = I(y_start:y_end,x_start:x_end);
         Image = mat2gray(cutout150);
         %         imageSize = size(cutout150);
-        
-        
+
         % Get the cone positions;
         [CNNPos]= GetConePosSingle(params,Image,net,ProbParam, cnnCalcType);
         
-        
-        if isempty(CNNPos)
-            % skip this cutout
-        else
-            CNNPos(CNNPos(:,1)<=floor(offset/2),:)         = [];
-            CNNPos(CNNPos(:,1)>=newSize-floor(offset/2),:) = [];
-            CNNPos(CNNPos(:,2)<=floor(offset/2),:)         = [];
-            CNNPos(CNNPos(:,2)>=newSize-floor(offset/2),:) = [];
+        % skip empty CNNPos 
+        if ~isempty(CNNPos)
+            CNNPos(CNNPos(:,1)<=floor(offsetY/2),:)         = [];
+            CNNPos(CNNPos(:,1)>=newSize-floor(offsetY/2),:) = [];
+            CNNPos(CNNPos(:,2)<=floor(offsetX/2),:)         = [];
+            CNNPos(CNNPos(:,2)>=newSize-floor(offsetX/2),:) = [];
             
             correct_xy = [ones(size(CNNPos,1),1)*(x_start-1), ones(size(CNNPos,1),1)*(y_start-1)];
             
             CNNPos_I = CNNPos+correct_xy;
-            %         CNNPos_I(:,1) = CNNPos(:,1)+correct_x;
-            %         CNNPos_I(:,2) = CNNPos(:,2)+correct_y;
             
             conelocs = [conelocs; CNNPos_I];
         end
         
         Cutout = Cutout+1;
         
-        waitbar(((y_cutout - 1) * cutoutsINrow + x_cutout) / (numCutouts))
+        waitbar(((y_cutout - 1) * cutoutsINrowX + x_cutout) / (numCutouts))
     end
 end
 
