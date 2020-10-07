@@ -107,6 +107,7 @@ SPACE             - save current locations
 Del (entf)        - delete selected cone locations
 V                 - voronoi diagram for 'Cone Area'
 N                 - voronoi diagram for 'Number of Neighbors'
+P				  - activate zoom/pan by mouse. Esc/Enter - continue EditMode.
 
 
 Warning! Hotkeys is working only in edit mode. Unfortunately, MatLab R2016b App Designer does not have necessary callbacks to make hotkeys.
