@@ -336,9 +336,9 @@ if opts.verbose > 1, flags.base{end+1} = '-v' ; end
 if opts.debug
   flags.base{end+1} = '-g' ;
   flags.base{end+1} = '-DDEBUG' ;
-else
-  flags.base{end+1} = '-O' ;
-  flags.base{end+1} = '-DNDEBUG' ;
+% else
+%   flags.base{end+1} = '-O2' ;
+%   flags.base{end+1} = '-DNDEBUG' ;
 end
 
 % MEX: Additional flags passed to `mex` for compiling C++
@@ -347,6 +347,10 @@ flags.mex = {'-largeArrayDims'} ;
 flags.cxx = {} ;
 flags.cxxoptim = {} ;
 if ~isempty(opts.mexConfig), flags.mex = horzcat(flags.mex, {'-f', opts.mexConfig}) ; end
+if ~opts.debug
+  flags.mex{end+1} = '-O' ;
+  flags.mex{end+1} = '-DNDEBUG' ;
+end
 
 % MEX: Additional flags passed to `mex` for compiling CUDA
 % code. CXX and CXXOPTIOM are passed directly to the encapsualted compiler.
@@ -354,18 +358,32 @@ flags.mexcuda = {'-largeArrayDims'} ;
 flags.mexcuda_cxx = {} ;
 flags.mexcuda_cxxoptim = {} ;
 if ~isempty(opts.mexCudaConfig), flags.mexcuda = horzcat(flags.mexcuda, {'-f', opts.mexCudaConfig}) ; end
+if ~opts.debug
+  flags.mexcuda{end+1} = '-O' ;
+  flags.mexcuda{end+1} = '-DNDEBUG' ;
+end
 
 % MEX_LINK: Additional flags passed to `mex` for linking.
 flags.mexlink = {'-largeArrayDims', '-lmwblas'} ;
 flags.mexlink_ldflags = {} ;
 flags.mexlink_ldoptimflags = {} ;
 flags.mexlink_linklibs = {} ;
+if ~opts.debug
+  flags.mexlink{end+1} = '-O' ;
+  flags.mexlink{end+1} = '-DNDEBUG' ;
+end
 
 % NVCC: Additional flags passed to `nvcc` for compiling CUDA code.
-flags.nvcc = {'-D_FORCE_INLINES', '--std=c++11', ...
+flags.nvcc = {'-D_FORCE_INLINES', '--std=c++14', ...
   sprintf('-I"%s"',fullfile(matlabroot,'extern','include')), ...
   sprintf('-I"%s"',fullfile(toolboxdir('distcomp'),'gpu','extern','include')), ...
   opts.cudaArch} ;
+
+if ~opts.debug
+  flags.nvcc{end+1} = '-O3' ;
+  flags.nvcc{end+1} = '-DNDEBUG' ;
+end
+
 
 switch arch
   case {'maci64','glnxa64'}
@@ -624,7 +642,14 @@ args = horzcat({'-outdir', mex_dir}, ...
   {['LDOPTIMFLAGS=$LDOPTIMFLAGS ' strjoin(flags.mexlink_ldoptimflags)]}, ...
   {['LINKLIBS=' strjoin(flags.mexlink_linklibs) ' $LINKLIBS']}, ...
   objs) ;
+
+% index = find(strcmp(args, '-O2'));
+% args{index} = '-O';
+% index = find(strcmp(args, '-largeArrayDims'));
+% args{index} = '';
+
 opts.verbose && fprintf('%s: MEX LINK: %s\n', mfilename, strjoin(args)) ;
+
 mex(args{:}) ;
 
 % --------------------------------------------------------------------
@@ -644,7 +669,13 @@ function cl_path = check_clpath()
 % Checks whether the cl.exe is in the path (needed for the nvcc). If
 % not, tries to guess the location out of mex configuration.
 cc = mex.getCompilerConfigurations('c++');
-cl_path = fullfile(cc.Location, 'VC', 'bin', 'amd64');
+if strcmp(cc.Name, 'Microsoft Visual C++ 2019') || strcmp(cc.Name, 'Microsoft Visual C++ 2017')
+    cl_path = fullfile(cc.Location, 'VC', 'Tools', 'MSVC');
+    dirs = dir(cl_path);
+    cl_path = fullfile(cl_path, dirs(end).name, 'bin', 'Hostx64', 'x64', 'cl.exe');
+else
+    cl_path = fullfile(cc.Location, 'VC', 'bin', 'amd64');
+end
 [status, ~] = system('cl.exe -help');
 if status == 1
   % Add cl.exe to system path so that nvcc can find it.
