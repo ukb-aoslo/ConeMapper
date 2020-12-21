@@ -19,7 +19,8 @@ run(fullfile(MatConvNetPath,'matlab','vl_setupnn.m'))
 
 % choose dataset with already trained cnn and detection parameters
 % DataSet = 'confocal'; % original cases: 'confocal' or 'split detector'
-DataSet = 'g1+cunefare';
+% DataSet = 'g1+cunefare';
+DataSet = 'alex training set';
 
 
 % 14111 - Training (all 14 --> 224 grader 1) Validation (1 Image --> 16 grader 1)
@@ -29,14 +30,14 @@ DataSet = 'g1+cunefare';
  params = get_parameters_Cone_CNN(DataSet);
 
 % Choose Folder of images to detect cones in
-ImageDir =  fullfile(BasePath, 'Images and Results\Confocal\Test_Images_150');
+ImageDir =  fullfile(BasePath, 'Images and Results\AlexTrainingSet\ToDetectCones');
 % 'C:\Users\Jenny\Documents\MATLAB\CNN-Cone-Detection\Images and Results\Confocal\Test Images_150';
 
 % format of images (must be readable by imread, must be 2D/grayscale format)
 ImExtension = '.tif';
 
 % Choose Folder to save coordinate
-SaveDir = fullfile(BasePath, 'Images and Results\Confocal\Test_CNNcoord_42');
+SaveDir = fullfile(BasePath, 'Images and Results\AlexTrainingSet\ToDetectCones');
 % 'C:\Users\Jenny\Documents\MATLAB\CNN-Cone-Detection\Images and Results\Confocal\Test CNNcoord 42';
 
 
@@ -44,5 +45,5 @@ SaveDir = fullfile(BasePath, 'Images and Results\Confocal\Test_CNNcoord_42');
  
  SaveNewSetCones(params,ImageDir,ImExtension,SaveDir, cnnCalcType)
  
- time_start
- time_finished = clock
+ time_start;
+ time_finished = clock;
