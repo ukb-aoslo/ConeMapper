@@ -128,8 +128,31 @@ Selects cone location and Deletes selected cone locations on image.
 
 #### Add Conelocs Outside Box Button
 
-??
+Add Conelocs outside the Box by using FastPickFind.
 
 #### Add Conelocs In Box
 
-??
+Add Conelocs outside the Box which was already found.
+
+### Del Outside Image
+
+Deletes cone locations outside the image (on black border around the image).
+
+### Del Doubles
+
+Deletes cone locations which has distance to neighbour less then 1 pixel.
+
+### Correct Cone Locs [IN DEVELOP]
+
+Corrects cone locations by using statistics of distances between neighbours and number of neighbours.
+Still in development. Don't work properly!
+
+### Show Last Correction Result
+
+Shows last correction try by 'Correct Cone Locs'.
+
+### Compare with
+
+Shows second image near to the main one.
+In this mode you cannot use edit mode. Any other function is allowed.
+To exit this mode just click again button 'Compare with'.
