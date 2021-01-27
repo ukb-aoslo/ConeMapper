@@ -16,7 +16,7 @@ disp(strcat('Move CNN to:  ', cnnCalcType, '. (can be up to 10 mins)'));
 net = vl_simplenn_move(net, cnnCalcType);
 net.layers{end}.type = 'softmax';
 
-disp('start cones recognision');
+disp('start cone detection');
 
 % Set detection parameters based on optimization
 load(params.Results.OptimizationPath)
