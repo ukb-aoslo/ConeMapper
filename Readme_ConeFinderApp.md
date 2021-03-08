@@ -15,9 +15,11 @@ Allows user to find cone locations by FastPickFind algorithm or CNN on new image
 
 If you will use CNN to find cone locations, be ready to wait for about 10 mins. For the first run CNN is preparing the data for about 6-8 minutes. After preparing is finished, starts the cone locating process. It takes about 1-2 minutes. For the second and all next searches CNN will not be preparing the data, because it is already stored in memory.
 
-#### Voronoi Button
+### Compare with
 
-Prints Voronoi diagram above the image. When diaragram is printed, the interface of Cone Finder is disabled. Click again on button 'Voronoi' to remove the diagram and unlock the interface.
+Shows second image near to the main one.
+In this mode you cannot use edit mode. Any other function is allowed.
+To exit this mode just click again button 'Compare with'.
 
 #### Save Curent Locations Button
 
@@ -26,6 +28,8 @@ Saves all current cone locations to .mat file.
 #### Exit Button
 
 Exit the programm. Before exit asks user to save the data.
+
+
 
 ### Image Properties
 
@@ -36,6 +40,10 @@ If several images is opened, shows next image.
 #### Log Image Switch
 
 Uses log filter on image in 'On' state.
+
+#### LapOfGaus Switch
+
+Uses Laplacian of Gaussian on image in 'On' state.
 
 #### Show Image Switch
 
@@ -56,6 +64,8 @@ Shows the grid on the image. The default step is +-115 pixels.
 #### Show Grid Numbers Switch
 
 Shows the number of each cell in the grid. Works only if Show Grid Switch is 'On'.
+
+
 
 ### Marks Properties
 
@@ -78,6 +88,49 @@ Highlight autodetected cones by magenta color. Works only inside the box.
 #### Show Marked Locations Switch
 
 Shows marks.
+
+
+
+### Voronoi
+
+#### Show Cone Locations CheckBox
+
+Prints cone locations on Voronoi diagram in active state.
+
+#### Use Corrected Cones
+
+Allows to use corrected cones (but not applied) in Voronoi diagram in active state.
+
+#### Voronoi Button
+
+Prints Voronoi diagram above the image. When diaragram is printed, the interface of Cone Finder is disabled. Click again on button 'Voronoi' to remove the diagram and unlock the interface.
+
+
+
+### Improve CNN Results
+
+#### Del Outside Image Button
+
+Deletes cone locations outside the image (on black border around the image).
+
+#### Del Doubles Button
+
+Deletes cone locations which has distance to neighbour less then 1 pixel.
+
+#### Correct Cone Locs2 [IN DEVELOP] Button
+
+Corrects cone locations by using statistics of distances between neighbours and number of neighbours.
+Still in development.
+
+#### Apply Button
+
+Adds corrected cone locations to the main set of cone locations.
+
+#### Show Last Correction Result Switch
+
+Shows last correction try by 'Correct Cone Locs'.
+
+
 
 ### Edit Cone Locations
 
@@ -130,29 +183,10 @@ Selects cone location and Deletes selected cone locations on image.
 
 Add Conelocs outside the Box by using FastPickFind.
 
-#### Add Conelocs In Box
+#### Add Conelocs In Box Button
 
 Add Conelocs outside the Box which was already found.
 
-### Del Outside Image
+#### Edit Corrected Cones
 
-Deletes cone locations outside the image (on black border around the image).
-
-### Del Doubles
-
-Deletes cone locations which has distance to neighbour less then 1 pixel.
-
-### Correct Cone Locs [IN DEVELOP]
-
-Corrects cone locations by using statistics of distances between neighbours and number of neighbours.
-Still in development. Don't work properly!
-
-### Show Last Correction Result
-
-Shows last correction try by 'Correct Cone Locs'.
-
-### Compare with
-
-Shows second image near to the main one.
-In this mode you cannot use edit mode. Any other function is allowed.
-To exit this mode just click again button 'Compare with'.
+Allows to delete corrected cone locations (but not applied) in Edit Mode in active state.
