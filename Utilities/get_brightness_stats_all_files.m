@@ -10,8 +10,8 @@ brighnesses = zeros(numFiles, 6);
 
 % Loop through all images in training set
 for iFile = 1:numFiles
-    [minB, maxB, avgB, minCornerB, maxCornerB, avgCornerB] = get_brightness_stats(fullfile(NewDir,ImageList{iFile}));
-    brighnesses(iFile, :) = [minB, maxB, avgB, minCornerB, maxCornerB, avgCornerB];
+    [minB, maxB, avgB, minBorderB, maxBorderB, avgBorderB] = get_brightness_stats(fullfile(NewDir,ImageList{iFile}));
+    brighnesses(iFile, :) = [minB, maxB, avgB, minBorderB, maxBorderB, avgBorderB];
 end
 
 brighnesses(:, 7) = brighnesses(:, 1) > brighnesses(:, 4);
@@ -19,8 +19,8 @@ brighnesses(:, 8) = brighnesses(:, 2) > brighnesses(:, 5);
 brighnesses(:, 9) = brighnesses(:, 3) > brighnesses(:, 6);
 
 colNames = {'minCenter','maxCenter','avgCenter',  ...
-    'minCorner','maxCorner','avgCorner', ... 
-    'minCenGreaterMinCor','maxCenGreaterMaxCor','avgCenGreaterAvgCor'};
+    'minBorder','maxBorder','avgBorder', ... 
+    'minCenGreaterMinBor','maxCenGreaterMaxBor','avgCenGreaterAvgBor'};
 sTable = array2table(brighnesses,'VariableNames',colNames);
 
 disp(sTable);

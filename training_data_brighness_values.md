@@ -1,13 +1,13 @@
 Center is a box between points: from [imageSize_x * 0.36,  imageSize_y * 0.36] (top left) to [imageSize_x * 0.64,  imageSize_y * 0.64] (bottom right).
-Corner is outsid the center box.
-minCenGreaterMinCor, maxCenGreaterMaxCor, avgCenGreaterAvgCor are logical values (center is greate than corner).
+Border is outside the center box.
+minCenGreaterMinBor, maxCenGreaterMaxBor, avgCenGreaterAvgBor are logical values (center is greate than corner).
 min(minCenter) = 46.181
 max(minCenter) = 90
-min(maxCorner) = 2.7879e-17 (almost 0)
-max(maxCorner) = 36
+min(maxBorder) = 2.7879e-17 (almost 0)
+max(maxBorder) = 36
 	
 	
-	minCenter    maxCenter    avgCenter    minCorner     maxCorner    avgCorner    minCenGreaterMinCor    maxCenGreaterMaxCor    avgCenGreaterAvgCor
+	minCenter    maxCenter    avgCenter    minBorder     maxBorder    avgBorder    minCenGreaterMinBor    maxCenGreaterMaxBor    avgCenGreaterAvgBor
     _________    _________    _________    __________    _________    _________    ___________________    ___________________    ___________________
 
     49.781       249.92       97.197       1.2338e-15     248.9       92.315       1                      1                      1                  

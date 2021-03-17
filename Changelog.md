@@ -1,3 +1,9 @@
+### 17.03.2021
+ - Improve usability of "Corrected Cone Locs2".
+ - Add script to calculate brightness statistics of cone locations(/Utilities/get_brightness_stats_all_files.m).
+ - Add restriction by pixel brightness in correction algorithm. 
+   If pixel brightness less than threshold value, than this point will not be consider as potential cone location.
+
 ### 08.03.2021
  - Improve usability of "Corrected Cone Locs2".
  - Add check box "Use Correted Cones" in Voronoi panel.

@@ -1,4 +1,4 @@
-function [minCenterB, maxCenterB, avgCenterB, minCornerB, maxCornerB, avgCornerB] = get_brightness_stats(filepath)
+function [minCenterB, maxCenterB, avgCenterB, minBorderB, maxBorderB, avgBorderB] = get_brightness_stats(filepath)
     % Fname = 'BAK8044R_2019_04_03_10_31_23_AOSLO_V003_stabilized_840_annotated';
     
     [folder, baseFileNameNoExt, ~] = fileparts(filepath);
@@ -45,9 +45,9 @@ function [minCenterB, maxCenterB, avgCenterB, minCornerB, maxCornerB, avgCornerB
     avgCenterB = mean(brighnessValues);
 
     % Calculatiung corner
-    idxCorner = conelocs(:, 3) == 0;
+    idxBorder = conelocs(:, 3) == 0;
 
-    newlocs = conelocs(idxCorner, :);
+    newlocs = conelocs(idxBorder, :);
     roundedLocs = round(newlocs(:, 1:2));
     % I has transposed coordinates
     roundedLocs = roundedLocs(:,[2 1]);
@@ -58,16 +58,16 @@ function [minCenterB, maxCenterB, avgCenterB, minCornerB, maxCornerB, avgCornerB
     brighnessValues = I(lineaerIndexes);
     brighnessValues = brighnessValues(brighnessValues > 0);
     
-    minCornerB = min(brighnessValues);
-    maxCornerB = max(brighnessValues);
-    avgCornerB = mean(brighnessValues);
+    minBorderB = min(brighnessValues);
+    maxBorderB = max(brighnessValues);
+    avgBorderB = mean(brighnessValues);
 
     if isfloat(minCenterB) && minCenterB <= 1
         minCenterB = minCenterB * 255;
         maxCenterB = maxCenterB * 255;
         avgCenterB = avgCenterB * 255;
-        minCornerB = minCornerB * 255;
-        maxCornerB = maxCornerB * 255;
-        avgCornerB = avgCornerB * 255;
+        minBorderB = minBorderB * 255;
+        maxBorderB = maxBorderB * 255;
+        avgBorderB = avgBorderB * 255;
     end
 end
