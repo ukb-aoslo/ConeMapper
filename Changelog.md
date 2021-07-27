@@ -1,3 +1,6 @@
+### 27.07.2021
+ - Fixed bug with not working Voronoi diagram in EditMode.
+
 ### 17.03.2021
  - Improve usability of "Corrected Cone Locs2".
  - Add script to calculate brightness statistics of cone locations(/Utilities/get_brightness_stats_all_files.m).
