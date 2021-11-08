@@ -364,7 +364,7 @@ if ~opts.debug
 end
 
 % MEX_LINK: Additional flags passed to `mex` for linking.
-flags.mexlink = {'-largeArrayDims', '-lmwblas'} ;
+flags.mexlink = {'-lmwblas'} ;
 flags.mexlink_ldflags = {} ;
 flags.mexlink_ldoptimflags = {} ;
 flags.mexlink_linklibs = {} ;
@@ -642,14 +642,10 @@ args = horzcat({'-outdir', mex_dir}, ...
   {['LDOPTIMFLAGS=$LDOPTIMFLAGS ' strjoin(flags.mexlink_ldoptimflags)]}, ...
   {['LINKLIBS=' strjoin(flags.mexlink_linklibs) ' $LINKLIBS']}, ...
   objs) ;
-
-% index = find(strcmp(args, '-O2'));
-% args{index} = '-O';
-% index = find(strcmp(args, '-largeArrayDims'));
-% args{index} = '';
-
+if ~verLessThan('matlab','9.4')
+  args{end+1} = '-R2018a';
+end
 opts.verbose && fprintf('%s: MEX LINK: %s\n', mfilename, strjoin(args)) ;
-
 mex(args{:}) ;
 
 % --------------------------------------------------------------------
@@ -681,7 +677,7 @@ if status == 1
   % Add cl.exe to system path so that nvcc can find it.
   warning('CL.EXE not found in PATH. Trying to guess out of mex setup.');
   prev_path = getenv('PATH');
-  setenv('PATH', [prev_path ';' cl_path]);
+  setenv('PATH', [prev_path ';' ]);
   status = system('cl.exe');
   if status == 1
     setenv('PATH', prev_path);
