@@ -215,7 +215,11 @@ mex_src = {} ;
 
 % Files that are compiled as CPP or CU depending on whether GPU support
 % is enabled.
-if opts.enableGpu, ext = 'cu' ; else ext='cpp' ; end
+if opts.enableGpu
+    ext = 'cu' ; 
+else
+    ext='cpp' ;
+end
 lib_src{end+1} = fullfile(root,'matlab','src','bits',['data.' ext]) ;
 lib_src{end+1} = fullfile(root,'matlab','src','bits',['datamex.' ext]) ;
 lib_src{end+1} = fullfile(root,'matlab','src','bits',['nnconv.' ext]) ;
@@ -376,7 +380,7 @@ end
 % NVCC: Additional flags passed to `nvcc` for compiling CUDA code.
 flags.nvcc = {'-D_FORCE_INLINES', '--std=c++14', ...
   sprintf('-I"%s"',fullfile(matlabroot,'extern','include')), ...
-  sprintf('-I"%s"',fullfile(toolboxdir('distcomp'),'gpu','extern','include')), ...
+  sprintf('-I"%s"',fullfile(toolboxdir('parallel'),'gpu','extern','include')), ...
   opts.cudaArch} ;
 
 if ~opts.debug
@@ -631,7 +635,7 @@ nvcc_cmd = sprintf('"%s" -c -o "%s" "%s" %s ', ...
 opts.verbose && fprintf('%s: NVCC CC: %s\n', mfilename, nvcc_cmd) ;
 status = system(nvcc_cmd);
 disp(status);
-if status, error('Command %s failed.', nvcc_cmd); end;
+if status, error('Command %s failed.', nvcc_cmd); end
 
 % --------------------------------------------------------------------
 function mex_link(opts, objs, mex_dir, flags)
@@ -712,7 +716,7 @@ opts.verbose && fprintf(['%s:\tCUDA: searching for the CUDA Devkit' ...
 % Propose a number of candidate paths for NVCC
 paths = {getenv('MW_NVCC_PATH')} ;
 paths = [paths, which_nvcc()] ;
-for v = {'5.5', '6.0', '6.5', '7.0', '7.5', '8.0', '8.5', '9.0', '9.5', '10.0'}
+for v = {'5.5', '6.0', '6.5', '7.0', '7.5', '8.0', '8.5', '9.0', '9.5', '10.0', '10.1', '11.5'}
   switch computer('arch')
     case 'glnxa64'
       paths{end+1} = sprintf('/usr/local/cuda-%s/bin/nvcc', char(v)) ;
@@ -835,4 +839,4 @@ switch computer('arch')
 end
 archs = regexp(hstring, '''sm_(\d{2})''', 'tokens');
 archs = cellfun(@(a) str2double(a{1}), archs);
-if status, error('NVCC command failed: %s', hstring); end;
+if status, error('NVCC command failed: %s', hstring); end
