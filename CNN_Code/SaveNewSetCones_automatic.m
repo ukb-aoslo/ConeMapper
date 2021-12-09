@@ -76,6 +76,7 @@ for y_cutout = 1:cutoutsINrowY
         
         % skip empty CNNPos 
         if ~isempty(CNNPos)
+            % кажется офсеты тут перепутаны местами
             CNNPos(CNNPos(:,1)<=floor(offsetY/2),:)         = [];
             CNNPos(CNNPos(:,1)>=newSize-floor(offsetY/2),:) = [];
             CNNPos(CNNPos(:,2)<=floor(offsetX/2),:)         = [];
