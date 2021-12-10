@@ -1,3 +1,8 @@
+### 10.12.2021
+ - Fixed bug with "Show grid".
+ - Left-top of each cell in grid shows the starting patch of the CNN recognition process.
+ - Fixed bug with empty strips after recognition.
+
 ### 27.07.2021
  - Fixed bug with not working Voronoi diagram in EditMode.
 

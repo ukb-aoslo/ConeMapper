@@ -32,14 +32,14 @@ newSize = 150;
 cutoutsINrowX = ceil(originalSizeX/newSize);      % calculate minimum numer of cutouts to produce
 cutoutsINrowY = ceil(originalSizeY/newSize);
 
-offsetX = (cutoutsINrowX*newSize-originalSizeX)/(cutoutsINrowX-1);
+offsetX = floor(cutoutsINrowX*newSize-originalSizeX)/(cutoutsINrowX-1);
 
 while offsetX < 20
     cutoutsINrowX = cutoutsINrowX+1;
     offsetX = round((cutoutsINrowX*newSize-originalSizeX)/(cutoutsINrowX-1));      % offset which will be applied for a fix number of cutouts in a row/column
 end
 
-offsetY = (cutoutsINrowY*newSize-originalSizeY)/(cutoutsINrowY-1);
+offsetY = floor(cutoutsINrowY*newSize-originalSizeY)/(cutoutsINrowY-1);
 
 while offsetY < 20
     cutoutsINrowY = cutoutsINrowY+1;
@@ -60,7 +60,7 @@ h = waitbar(0,'CNN locations...');
 
 for y_cutout = 1:cutoutsINrowY
     for x_cutout = 1:cutoutsINrowX
-        
+         
         % create patches of 150x150 pixel
         x_start = positions_startX(x_cutout);
         y_start = positions_startY(y_cutout);
@@ -77,10 +77,10 @@ for y_cutout = 1:cutoutsINrowY
         % skip empty CNNPos 
         if ~isempty(CNNPos)
             % кажется офсеты тут перепутаны местами
-            CNNPos(CNNPos(:,1)<=floor(offsetY/2),:)         = [];
-            CNNPos(CNNPos(:,1)>=newSize-floor(offsetY/2),:) = [];
-            CNNPos(CNNPos(:,2)<=floor(offsetX/2),:)         = [];
-            CNNPos(CNNPos(:,2)>=newSize-floor(offsetX/2),:) = [];
+            CNNPos(CNNPos(:,1)<=floor(offsetX/2),:)         = [];
+            CNNPos(CNNPos(:,1)>=newSize-floor(offsetX/2),:) = [];
+            CNNPos(CNNPos(:,2)<=floor(offsetY/2),:)         = [];
+            CNNPos(CNNPos(:,2)>=newSize-floor(offsetY/2),:) = [];
             
             correct_xy = [ones(size(CNNPos,1),1)*(x_start-1), ones(size(CNNPos,1),1)*(y_start-1)];
             
