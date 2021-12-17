@@ -41,7 +41,7 @@ HalfPatchSize = ceil((params.PatchSize-1)./2);
 
     % Use CNN to find probability for each patch 
     NumPatches = size(test_patches,4);
-    Test_Probability = [];
+    Test_Probability = zeros(2, NumPatches);
     
     isGpuUsed = 1;
     if strcmp(cnnCalcType, 'cpu')
@@ -60,7 +60,7 @@ HalfPatchSize = ceil((params.PatchSize-1)./2);
         res_temp = vl_simplenn(net, resized_test_patches,[],[],'mode','test');
         Prob_temp = squeeze(gather(res_temp(end).x)) ;
         Prob_temp(3:end,:) = [];
-        Test_Probability = [Test_Probability Prob_temp ];
+        Test_Probability(:, batch) = Prob_temp;
     end
     
     % Get Probability of being a cone
