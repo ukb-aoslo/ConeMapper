@@ -2,30 +2,29 @@
 
 ## Description
 Cone finder is the programm, based on MarkCones_CNN.
-Written on Matlab R2016b App Designer.
+Written on Matlab R2021a App Designer.
 
 ## Functions
 
 ### Main Functions
 
-#### Start Cone Finder Button
+#### File -> New recognition
 
 The main button.
-Allows user to find cone locations by FastPickFind algorithm or CNN on new image, or open image with already finded set on cones.
+Allows user to find cone locations by FastPickFind algorithm or CNN on new image.
+If you will use CNN to find cone locations, be ready to wait for about 10 mins. 
+After preparing is finished, starts the cone locating process. It takes about 1-2 minutes. 
+For the second and all next searches CNN will not be preparing the data, because it is already stored in memory.
 
-If you will use CNN to find cone locations, be ready to wait for about 10 mins. For the first run CNN is preparing the data for about 6-8 minutes. After preparing is finished, starts the cone locating process. It takes about 1-2 minutes. For the second and all next searches CNN will not be preparing the data, because it is already stored in memory.
+#### File -> Open recognition
 
-### Compare with
+Allows user to open .mat file with recognized cone locations and image.
 
-Shows second image near to the main one.
-In this mode you cannot use edit mode. Any other function is allowed.
-To exit this mode just click again button 'Compare with'.
-
-#### Save Curent Locations Button
+#### File -> Save recognition
 
 Saves all current cone locations to .mat file.
 
-#### Exit Button
+#### File -> Exit
 
 Exit the programm. Before exit asks user to save the data.
 
@@ -33,37 +32,34 @@ Exit the programm. Before exit asks user to save the data.
 
 ### Image Properties
 
-#### Next Mosaic Image Button
+#### Log Image
 
-If several images is opened, shows next image.
+Uses log filter on image.
 
-#### Log Image Switch
+#### LapOfGaus
 
-Uses log filter on image in 'On' state.
+Uses Laplacian of Gaussian on image.
+What is it, read here: https://homepages.inf.ed.ac.uk/rbf/HIPR2/log.htm
 
-#### LapOfGaus Switch
+#### Show Image
 
-Uses Laplacian of Gaussian on image in 'On' state.
-
-#### Show Image Switch
-
-Show the image in 'On' state.
+Show the image.
 
 #### Brightness Slider
 
 Changes the brightness of the image.
 
-#### Reset Brightness Button
+#### Reset Brightness
 
 Resets the brightness of the image to 1.0.
 
-#### Show Grid Switch
+#### Show Grid
 
 Shows the grid on the image. The default step is +-115 pixels.
 
-#### Show Grid Numbers Switch
+#### Show Grid Numbers
 
-Shows the number of each cell in the grid. Works only if Show Grid Switch is 'On'.
+Shows the number of each cell in the grid. Works only if Show Grid is 'On'.
 
 
 
@@ -77,15 +73,15 @@ Avaliable types is Dot, Circle and Cross.
 #### Show Marks Options Radio Buttons
 
 The types of cone locations that should be shown.
-Auto + User - show both types.
-Userdetect - show only user detected cone locations. Works only inside the box.
-Autodetect - show only auto detected cone locations. Works only inside the box.
+ - Auto + User - show both types.
+ - Userdetect - show only user detected cone locations.
+ - Autodetect - show only auto detected cone locations.
 
-#### Highlight Autodetected Cones Switch
+#### Highlight Autodetected Cones
 
-Highlight autodetected cones by magenta color. Works only inside the box.
+Highlight autodetected cones by magenta color.
 
-#### Show Marked Locations Switch
+#### Show Marked Locations
 
 Shows marks.
 
@@ -93,17 +89,16 @@ Shows marks.
 
 ### Voronoi
 
-#### Show Cone Locations CheckBox
+#### Voronoi Diagram
 
-Prints cone locations on Voronoi diagram in active state.
+Prints Voronoi diagram above the image.
 
-#### Use Corrected Cones
+#### Voronoi Type Radio Buttons
 
-Allows to use corrected cones (but not applied) in Voronoi diagram in active state.
-
-#### Voronoi Button
-
-Prints Voronoi diagram above the image. When diaragram is printed, the interface of Cone Finder is disabled. Click again on button 'Voronoi' to remove the diagram and unlock the interface.
+The types of Voronoi diagram to show.
+ - Empty - prints just Voronoi Diagram without anything else.
+ - Cone Area - prints Voronoi Diagram only with closed polygons. Each polygon filled with color, depending on its area.
+ - Number of Neighbors - prints Voronoi Diagram only with closed polygons. Each polygon filled with color, depending on number of neighbour cells.
 
 
 
@@ -117,76 +112,39 @@ Deletes cone locations outside the image (on black border around the image).
 
 Deletes cone locations which has distance to neighbour less then 1 pixel.
 
-#### Correct Cone Locs2 [IN DEVELOP] Button
-
-Corrects cone locations by using statistics of distances between neighbours and number of neighbours.
-Still in development.
-
-#### Apply Button
-
-Adds corrected cone locations to the main set of cone locations.
-
-#### Show Last Correction Result Switch
-
-Shows last correction try by 'Correct Cone Locs'.
-
 
 
 ### Edit Cone Locations
-
-#### Edit Mode Switch
-
-Enables edit mode. In edit mode the figure interface is not availiable. Part of the interface of Cone Finder is disabled.
-In edit mode user can place new marks and remove existing marks.
-
-Hotkeys
-Mouse Left Click  - place the mark
-Mouse Right Click - remove the mark
-'+'               - zoom in
-'-'               - zoom out
-↓ ↑  ← →          - pan image
-Esc               - turn off Edit Mode
-D, B              - darken/brighten image
-R                 - reset brightness
-L                 - apply log filter
-I                 - show image
-T                 - show marks
-C, X, Z           - circle/cross/dot cone marks
-1, 2, 3           - auto/user/auto+user detected cone locations
-0                 - highlight autodetected marks
-Q                 - show grid
-E                 - show grid number
-SPACE             - save current locations
-Del (entf)        - delete selected cone locations
-V                 - voronoi diagram for 'Cone Area'
-N                 - voronoi diagram for 'Number of Neighbors'
-P				  - activate zoom/pan by mouse. Esc/Enter - continue EditMode.
-
-
-Warning! Hotkeys is working only in edit mode. Unfortunately, MatLab R2016b App Designer does not have necessary callbacks to make hotkeys.
-Warning!! In Edit Mode, when voronoi diagram is ploted, only next operations are allowed: 
-    - Zoom In/Out, 
-    - Pan image, 
-    - turn off Edit Mode, 
-    - Save Current Locations
-Press again V or N to turn off the voronoi diagram.
-
-#### Change Box Size Button
-
-Changes the box on image.
 
 #### Delete Selected Cones Button
 
 Selects cone location and Deletes selected cone locations on image.
 
-#### Add Conelocs Outside Box Button
+#### Add Conelocs by fast peak find
 
 Add Conelocs outside the Box by using FastPickFind.
 
-#### Add Conelocs In Box Button
 
-Add Conelocs outside the Box which was already found.
+### Hotkeys
+ - Alt + Mouse Left Click  - place the mark
+ - Alt + Mouse Right Click - remove the mark
+ - Mouse Wheel - zoom in/out
+ - Mouse Middle Button - pan image
+ - D, B              - darken/brighten image
+ - R                 - reset brightness
+ - L                 - apply log filter
+ - I                 - show image
+ - T                 - show marks
+ - C, X, Z           - circle/cross/dot cone marks
+ - 1, 2, 3           - auto/user/auto+user detected cone locations
+ - 0                 - highlight autodetected marks
+ - Q                 - show grid
+ - E                 - show grid number
+ - SPACE             - save current locations
+ - Del (entf)        - delete selected cone locations
+ - V                 - voronoi diagram for 'Cone Area'
+ - N                 - voronoi diagram for 'Number of Neighbors'
 
-#### Edit Corrected Cones
+ ### Ploting/Filter applying order
 
-Allows to delete corrected cone locations (but not applied) in Edit Mode in active state.
+Image -> Log filter -> Laplacian of Gaussian -> Voronoi Diagram -> Conelocations -> Grid
