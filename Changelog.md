@@ -1,3 +1,33 @@
+### 27.01.2022
+ - Deleted:
+    - "Bounding box" has been deleted.
+    - "Compare with" function has been deleted.
+    - "Mosaic" has been deleted.
+    - Test algorithm of improving cones after CNN (by distance model) has been deleted.
+    - Edit mode has been removed.
+ - New features:
+    - "Empty" view of Voronoi Diagram (polygons is not filled by color).
+    - Voronoi Diagram is now works with every view feature of ConeFinder.
+    - Cones can be edited during Voronoi Diagram presentation. Changes will be applyed to diagram immediately.
+    - Minimap has been added.
+    - Info label has been added. Now you can see live time coordinates and pixel value under cursor.
+ - Updates:
+    - Hotkeys now work all time (not only Edit mode).
+    - Pan and Zoom tools was updated.
+    - All switchers in the interface were changed to check boxes.
+    - View logic was updated. Current presentation order: Image -> Log filter -> Laplacian of Gaussian -> Voronoi Diagram -> Conelocations -> Grid
+    - Voronoi Diagram performance has been improved.
+    - Everything in the code was adjusted to Matlab 2021a version.
+    - Filename and cones info now in the window title.
+ - Bug fixes:
+    - Fixed bugs when you choose nothing in dialog windows.
+    - Fixed bugs with grid presentation (orientation, was not working with large not sqare images).
+    - Fixed bugs with overlaping during CNN recognition.
+    - Fixed "Delete doubles" function. Not it is working with large numbers of cones.
+    - Fixed Voronoi Diagram color map scaling.
+    - Fixed remember last used path for fileopengui.
+    - Fixed button labeling.
+
 ### 10.12.2021
  - Fixed bug with "Show grid".
  - Left-top of each cell in grid shows the starting patch of the CNN recognition process.

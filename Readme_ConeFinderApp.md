@@ -106,11 +106,11 @@ The types of Voronoi diagram to show.
 
 #### Del Outside Image Button
 
-Deletes cone locations outside the image (on black border around the image).
+Deletes cone locations outside the image (on black border around the image; consider pixels with lower value then 3).
 
 #### Del Doubles Button
 
-Deletes cone locations which has distance to neighbour less then 1 pixel.
+Deletes cone locations which has distance to neighbour less then 1,5 pixel.
 
 
 
