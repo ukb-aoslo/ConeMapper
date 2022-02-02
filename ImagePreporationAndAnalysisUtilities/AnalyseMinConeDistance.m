@@ -1,4 +1,4 @@
-folder = 'E:\PhD\DATA\Training_Data_for_NEW_Training';
+folder = 'D:\Testing data\Annotated_Mosaics_41eyes_JLR';
 fileName = 'E:\PhD\DATA\Training_Data_for_NEW_Training\BAK1012L1_2020_06_18_09_13_07_AOSLO_788_V001_annotated_JLR.mat';
 dirs = dir([folder, '\*.mat']);
 
