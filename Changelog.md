@@ -1,3 +1,9 @@
+### 14.04.2022
+ - New features:
+    - Add colormaps for voronoi diagram
+    - Add import/export for .csv format
+    - Add old format reading
+
 ### 27.01.2022
  - Deleted:
     - "Bounding box" has been deleted.
