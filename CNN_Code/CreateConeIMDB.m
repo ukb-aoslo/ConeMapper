@@ -16,7 +16,7 @@ function CreateConeIMDB(params)
 HalfPatchSize = ceil((params.PatchSize-1)./2);
 
 % load in list of images
-ImageList = dir(fullfile( params.ImageDirTrain,['*' params.ImageExt])); 
+ImageList = dir(fullfile( params.ImageDirTrain,['*' params.ImageExt '*'])); 
 ImageList =  {ImageList.name};
 
 
@@ -44,7 +44,12 @@ CoordPath = fullfile(params.ManualCoordDirTrain,[BaseName,params.CoordAdditional
 
 switch params.CoordExt
     case '.csv'
-        ManualPos = round(csvread(CoordPath));
+        testRead = readmatrix(CoordPath);
+        if isempty(testRead)
+            ManualPos = zeros(0, 2);
+        else
+            ManualPos = round(csvread(CoordPath));
+        end
     case '.txt'
         [x,y] = textread(CoordPath);
         ManualPos = [x,y];
@@ -67,22 +72,25 @@ ManualPos(Invalid==1,:) = [];
 %%% Voroni analysis to choose non-cone patches
 % Get voronoi cells
 VoronoiEdges = [];
-[vx, vy] = voronoi(ManualPos(:,1),ManualPos(:,2));
 
-% Choose random point on each cell edge
-RandWeight = rand(1,size(vx,2));
-VoronoiEdges(:,1) = vx(1,:).*RandWeight + vx(2,:).*(1-RandWeight);
-VoronoiEdges(:,2) = vy(1,:).*RandWeight + vy(2,:).*(1-RandWeight);
-VoronoiEdges = round(VoronoiEdges);
+if ~isempty(ManualPos)
+    [vx, vy] = voronoi(ManualPos(:,1),ManualPos(:,2));
 
-% Remove cases to close to the image boundary
-Invalid = zeros(size(VoronoiEdges,1),1);
-Invalid(VoronoiEdges(:,1)<(1+HalfPatchSize)) = 1;
-Invalid(VoronoiEdges(:,1)>(size(Image,2)-HalfPatchSize)) = 1;
-Invalid(VoronoiEdges(:,2)<(1+HalfPatchSize)) = 1;
-Invalid(VoronoiEdges(:,2)>(size(Image,1)-HalfPatchSize)) = 1;
+    % Choose random point on each cell edge
+    RandWeight = rand(1,size(vx,2));
+    VoronoiEdges(:,1) = vx(1,:).*RandWeight + vx(2,:).*(1-RandWeight);
+    VoronoiEdges(:,2) = vy(1,:).*RandWeight + vy(2,:).*(1-RandWeight);
+    VoronoiEdges = round(VoronoiEdges);
 
-VoronoiEdges(Invalid==1,:) = [];
+    % Remove cases to close to the image boundary
+    Invalid = zeros(size(VoronoiEdges,1),1);
+    Invalid(VoronoiEdges(:,1)<(1+HalfPatchSize)) = 1;
+    Invalid(VoronoiEdges(:,1)>(size(Image,2)-HalfPatchSize)) = 1;
+    Invalid(VoronoiEdges(:,2)<(1+HalfPatchSize)) = 1;
+    Invalid(VoronoiEdges(:,2)>(size(Image,1)-HalfPatchSize)) = 1;
+
+    VoronoiEdges(Invalid==1,:) = [];
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% Extract and save patches along with label %%%%
