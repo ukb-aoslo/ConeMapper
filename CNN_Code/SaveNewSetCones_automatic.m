@@ -7,9 +7,9 @@ function [conelocs] = SaveNewSetCones_automatic(params,ImageDir,ImExtension,boxp
 % function to find cones using pretrained CNN on new images
 
 % Get half patch size
-HalfPatchSize = ceil((params.PatchSize-1)./2);
+% HalfPatchSize = ceil((params.PatchSize-1)./2);
 
-% load in the Net
+% load in the Net (loads 'net' and 'stats')
 load(params.ProbMap.NetworkPath)
 
 disp(strcat('Move CNN to:  ', cnnCalcType, '. (can be up to 10 mins)'));
@@ -58,6 +58,9 @@ positions_endY = positions_startY+(newSize-1);
 
 h = waitbar(0,'CNN locations...');
 
+halfOffsetX = floor(offsetX/2);
+halfOffsetY = floor(offsetY/2);
+
 for y_cutout = 1:cutoutsINrowY
     for x_cutout = 1:cutoutsINrowX
          
@@ -76,11 +79,18 @@ for y_cutout = 1:cutoutsINrowY
         
         % skip empty CNNPos 
         if ~isempty(CNNPos)
-            % кажется офсеты тут перепутаны местами
-            CNNPos(CNNPos(:,1)<=floor(offsetX/2),:)         = [];
-            CNNPos(CNNPos(:,1)>=newSize-floor(offsetX/2),:) = [];
-            CNNPos(CNNPos(:,2)<=floor(offsetY/2),:)         = [];
-            CNNPos(CNNPos(:,2)>=newSize-floor(offsetY/2),:) = [];
+            if x_start ~= 1
+                CNNPos(CNNPos(:,1)<=halfOffsetX,:)         = [];
+            end
+            if x_end + halfOffsetX < originalSizeX
+                CNNPos(CNNPos(:,1)>=newSize-halfOffsetX,:) = [];
+            end
+            if y_start ~= 1
+                CNNPos(CNNPos(:,2)<=halfOffsetY,:)         = [];
+            end
+            if y_end + halfOffsetY < originalSizeY
+                CNNPos(CNNPos(:,2)>=newSize-halfOffsetY,:) = [];
+            end
             
             correct_xy = [ones(size(CNNPos,1),1)*(x_start-1), ones(size(CNNPos,1),1)*(y_start-1)];
             
