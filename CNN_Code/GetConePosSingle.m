@@ -3,7 +3,7 @@
 % Released under a GPL v2 license.
 
 
-function [CNNPos]=GetConePosSingle(params,Image,net,ProbParam, cnnCalcType)
+function [CNNPos, varargout] = GetConePosSingle(params,Image,net,ProbParam, cnnCalcType)
 % Function to find cone positions using pretrained network and optimization
 % parameters
 
@@ -70,3 +70,7 @@ HalfPatchSize = ceil((params.PatchSize-1)./2);
     
     % Determine cone locations
     [CNNPos] = ProbabilityMap_ConeLocations(Cone_Probability,ProbParam);
+    
+    if nargout > 1
+       varargout{end + 1} = Cone_Probability;
+    end

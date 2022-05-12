@@ -74,6 +74,7 @@ ManualPos(Invalid==1,:) = [];
 VoronoiEdges = [];
 
 if ~isempty(ManualPos)
+    ManualPos = unique(ManualPos, 'rows');
     [vx, vy] = voronoi(ManualPos(:,1),ManualPos(:,2));
 
     % Choose random point on each cell edge

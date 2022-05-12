@@ -32,8 +32,8 @@ run(fullfile(MatConvNetPath,'matlab','vl_setupnn.m'))
 % DataSet = 'split detector';
 % DataSet = 'confocal'; % original cases: 'confocal' or 'split detector'
 % DataSet = 'g1+cunefare';
-% DataSet = 'alex training set';
-DataSet = '41 eye jlr set (black cut)';
+DataSet = 'alex training set';
+% DataSet = '41 eye jlr set (black cut)';
 
 % load in parameters
  params = get_parameters_Cone_CNN(DataSet);
