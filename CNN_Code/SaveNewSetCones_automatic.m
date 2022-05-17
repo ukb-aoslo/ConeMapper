@@ -60,6 +60,7 @@ h = waitbar(0,'CNN locations...');
 
 halfOffsetX = floor(offsetX/2);
 halfOffsetY = floor(offsetY/2);
+probMapFull = zeros(originalSizeY, originalSizeX);
 
 for y_cutout = 1:cutoutsINrowY
     for x_cutout = 1:cutoutsINrowX
@@ -75,7 +76,7 @@ for y_cutout = 1:cutoutsINrowY
         %         imageSize = size(cutout150);
 
         % Get the cone positions;
-        [CNNPos]= GetConePosSingle(params,Image,net,ProbParam, cnnCalcType);
+        [CNNPos, probMap]= GetConePosSingle(params,Image,net,ProbParam, cnnCalcType);
         
         % skip empty CNNPos 
         if ~isempty(CNNPos)
@@ -99,6 +100,8 @@ for y_cutout = 1:cutoutsINrowY
             conelocs = [conelocs; CNNPos_I];
         end
         
+        probMapFull(y_start:y_end,x_start:x_end) = probMap;
+        
         Cutout = Cutout+1;
         
         waitbar(((y_cutout - 1) * cutoutsINrowX + x_cutout) / (numCutouts))
@@ -119,6 +122,7 @@ multiple_mosaics = 0;
 imageSize = size(I);
 SaveName = [ImageDir(1:end-4) '_annotated.mat'];
 save(fullfile(SaveName),'I', 'boxposition', 'conelocs','multiple_mosaics','imageSize');
+imwrite(probMapFull, [ImageDir(1:end-4), '_probMap.png']);
 
 
 

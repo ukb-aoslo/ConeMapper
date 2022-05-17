@@ -72,5 +72,6 @@ HalfPatchSize = ceil((params.PatchSize-1)./2);
     [CNNPos] = ProbabilityMap_ConeLocations(Cone_Probability,ProbParam);
     
     if nargout > 1
-       varargout{end + 1} = Cone_Probability;
+        varargout = {};
+        varargout{end + 1} = Cone_Probability;
     end
