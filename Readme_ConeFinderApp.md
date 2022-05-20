@@ -134,6 +134,7 @@ Add Conelocs outside the Box by using FastPickFind.
  - D, B              - darken/brighten image
  - R                 - reset brightness
  - L                 - apply log filter
+ - G                 - apply Laplassian of Gaussian filter
  - I                 - show image
  - T                 - show marks
  - C, X, Z           - circle/cross/dot cone marks
