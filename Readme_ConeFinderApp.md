@@ -130,6 +130,7 @@ Add Conelocs outside the Box by using FastPickFind.
  - Alt + Mouse Right Click - remove the mark
  - Mouse Wheel - zoom in/out
  - Mouse Middle Button - pan image
+ - Arrow keys        - pan image
  - D, B              - darken/brighten image
  - R                 - reset brightness
  - L                 - apply log filter
@@ -148,3 +149,8 @@ Add Conelocs outside the Box by using FastPickFind.
  ### Ploting/Filter applying order
 
 Image -> Log filter -> Laplacian of Gaussian -> Voronoi Diagram -> Conelocations -> Grid
+
+
+## Known Bugs
+
+1. "When i'm in the cone finder marking window and use my normal Volume key on my keyboard  it changes cone marker colors while scrolling "up or down" the volume"
