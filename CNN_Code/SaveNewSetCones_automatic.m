@@ -61,6 +61,7 @@ h = waitbar(0,'CNN locations...');
 halfOffsetX = floor(offsetX/2);
 halfOffsetY = floor(offsetY/2);
 probMapFull = zeros(originalSizeY, originalSizeX);
+probMaps = cell(cutoutsINrowY, cutoutsINrowX);
 
 for y_cutout = 1:cutoutsINrowY
     for x_cutout = 1:cutoutsINrowX
@@ -100,6 +101,8 @@ for y_cutout = 1:cutoutsINrowY
             conelocs = [conelocs; CNNPos_I];
         end
         
+        probMaps{y_cutout, x_cutout} = probMap;
+        
         probMapFull(y_start:y_end,x_start:x_end) = probMap;
         
         Cutout = Cutout+1;
@@ -117,6 +120,15 @@ multiple_mosaics = 0;
 % mkdir(SaveDir);
 % end
 
+newMap = RecollectMap(probMaps, ...
+        positions_startX, positions_startY, positions_endX, positions_endY, ...
+        cutoutsINrowX, cutoutsINrowY, originalSizeY, originalSizeX, ...
+        offsetX, offsetY);
+
+% now we need to try to extract new cones from new map
+% Determine cone locations
+[CNNPos2] = ProbabilityMap_ConeLocations(newMap,ProbParam);
+% conelocs = CNNPos2;
 
 % [~,BaseName] = fileparts(ImageList{iFile});
 imageSize = size(I);
@@ -124,7 +136,139 @@ SaveName = [ImageDir(1:end-4) '_annotated.mat'];
 save(fullfile(SaveName),'I', 'boxposition', 'conelocs','multiple_mosaics','imageSize');
 imwrite(probMapFull, [ImageDir(1:end-4), '_probMap.png']);
 
+imwrite(newMap, [ImageDir(1:end-4), '_probMap2.png']);
+end
 
 
 
-
+function fullMap = RecollectMap(pieces, ...
+        positionsStartX, positionsStartY, positionsEndX, positionsEndY, ...
+        cutoutsINrowX, cutoutsINrowY, originalSizeY, originalSizeX, ...
+        offsetX, offsetY)
+    fullMap = zeros(originalSizeY, originalSizeX);
+    
+    % recollect middle part
+    for yCutout = 1:cutoutsINrowY-1
+        for xCutout = 1:cutoutsINrowX-1
+            xStart = positionsStartX(xCutout);
+            yStart = positionsStartY(yCutout);
+            xEnd = positionsEndX(xCutout);
+            yEnd = positionsEndY(yCutout);
+            
+            cutoutLeftTop = pieces{yCutout, xCutout};
+            cutoutRightTop = pieces{yCutout, xCutout + 1};
+            cutoutLeftBottom = pieces{yCutout + 1, xCutout};
+            cutoutRightBottom = pieces{yCutout, xCutout + 1};
+            
+            doubleLineTop = cutoutLeftBottom(1:offsetY, offsetX+1:end-offsetX);
+            doubleLineBottom = cutoutLeftTop(end-offsetY+1:end, offsetX+1:end-offsetX);
+            doubleLineLeft = cutoutRightTop(offsetY+1:end-offsetY, 1:offsetX);
+            doubleLineRight = cutoutLeftTop(offsetY+1:end-offsetY, end-offsetX+1:end);
+            
+            quaterSquare1 = cutoutLeftTop(end-offsetY+1:end, end-offsetX+1:end);
+            quaterSquare2 = cutoutRightTop(end-offsetY+1:end, 1:offsetX);
+            quaterSquare3 = cutoutLeftBottom(1:offsetY, end-offsetX+1:end);
+            quaterSquare4 = cutoutRightBottom(1:offsetY, 1:offsetX);
+            
+            quaterAvg = (quaterSquare1 + quaterSquare2 + quaterSquare3 + quaterSquare4) ./ 4;
+            bottomLineAvg = (doubleLineTop + doubleLineBottom) ./ 2;
+            rightLineAvg = (doubleLineLeft + doubleLineRight) ./ 2;
+            
+            fullMap(yStart+offsetY:yEnd-offsetY, xStart+offsetX:xEnd-offsetX) = cutoutLeftTop(offsetY+1:end-offsetY, offsetX+1:end-offsetX);
+            fullMap(yEnd-offsetY+1:yEnd, xStart+offsetX:xEnd-offsetX) = bottomLineAvg;
+            fullMap(yStart+offsetY:yEnd-offsetY, xEnd-offsetX+1:xEnd) = rightLineAvg;
+            fullMap(yEnd-offsetY+1:yEnd, xEnd-offsetX+1:xEnd) = quaterAvg;
+        end
+    end
+    
+    % recollect top and bottom rows
+    for xCutout = 1:cutoutsINrowX-1
+        xStart = positionsStartX(xCutout);
+        xEnd = positionsEndX(xCutout);
+            
+        % top line
+        yStart = positionsStartY(1);
+        
+        cutoutLeft = pieces{1, xCutout};
+        cutoutRight = pieces{1, xCutout + 1};
+        
+        topLine = cutoutLeft(1:offsetY, offsetX+1:end-offsetX);
+        quaterSquare1 = cutoutLeft(1:offsetY, end-offsetX+1:end);
+        quaterSquare2 = cutoutRight(1:offsetY, 1:offsetX);
+        
+        quaterAvg = (quaterSquare1 + quaterSquare2) ./ 2;
+        fullMap(yStart:yStart+offsetY-1, xStart+offsetX:xEnd-offsetX) = topLine;
+        fullMap(yStart:yStart+offsetY-1, xEnd-offsetX+1:xEnd) = quaterAvg;
+        
+        % bottom line
+        yStart = positionsStartY(cutoutsINrowY);
+        yEnd = positionsEndY(cutoutsINrowY);
+        
+        cutoutLeft = pieces{cutoutsINrowY, xCutout};
+        cutoutRight = pieces{cutoutsINrowY, xCutout + 1};
+        
+        bottomLine = cutoutLeft(end-offsetY+1:end, offsetX+1:end-offsetX);
+        rightLine = cutoutLeft(offsetY+1:end, end-offsetX+1:end);
+        leftLine = cutoutRight(offsetY+1:end, 1:offsetX);
+        
+        rightAvg = (rightLine + leftLine) ./ 2;
+        fullMap(yStart+offsetY:yEnd-offsetY, xStart+offsetX:xEnd-offsetX) = cutoutLeft(offsetY+1:end-offsetY, offsetX+1:end-offsetX);
+        fullMap(yEnd-offsetY+1:yEnd, xStart+offsetX:xEnd-offsetX) = bottomLine;
+        fullMap(yStart+offsetY:yEnd, xEnd-offsetX+1:xEnd) = rightAvg;
+    end
+    
+    % recollect left and right columns
+    for yCutout = 1:cutoutsINrowY-1
+        yStart = positionsStartY(yCutout);
+        yEnd = positionsEndY(yCutout);
+            
+        % left line
+        xStart = positionsStartX(1);
+        
+        cutoutTop = pieces{yCutout, 1};
+        cutoutBottom = pieces{yCutout + 1, 1};
+        
+        leftLine = cutoutTop(offsetY+1:end-offsetY, 1:offsetX);
+        quaterSquare1 = cutoutTop(end-offsetY+1:end, 1:offsetX);
+        quaterSquare2 = cutoutBottom(1:offsetY, 1:offsetX);
+        
+        quaterAvg = (quaterSquare1 + quaterSquare2) ./ 2;
+        fullMap(yStart+offsetY:yEnd-offsetY, xStart:xStart+offsetX-1) = leftLine;
+        fullMap(yEnd-offsetY+1:yEnd, xStart:xStart+offsetX-1) = quaterAvg;
+        
+        % right line
+        xStart = positionsStartX(cutoutsINrowX);
+        xEnd = positionsEndX(cutoutsINrowX);
+        cutoutTop = pieces{yCutout, cutoutsINrowX};
+        cutoutBottom = pieces{yCutout + 1, cutoutsINrowX};
+        
+        rightLine = cutoutTop(offsetY+1:end-offsetY, end-offsetX+1:end);
+        bottomLine = cutoutTop(end-offsetY+1:end, offsetX+1:end);
+        topLine = cutoutBottom(1:offsetY, offsetX+1:end);
+        
+        bottomAvg = (bottomLine + topLine) ./ 2;
+        fullMap(yStart+offsetY:yEnd-offsetY, xStart+offsetX:xEnd-offsetX) = cutoutTop(offsetY+1:end-offsetY, offsetX+1:end-offsetX);
+        fullMap(yStart+offsetY:yEnd-offsetY, xEnd-offsetX+1:xEnd) = rightLine;
+        fullMap(yEnd-offsetY+1:yEnd, xStart+offsetX:xEnd) = bottomAvg;
+    end
+    
+    % recollect 3 corners
+    leftTopCutout = pieces{1, 1};
+    fullMap(1:offsetY, 1:offsetX) = leftTopCutout(1:offsetY, 1:offsetX);
+    
+    yEnd = positionsEndY(cutoutsINrowY);
+    leftBottomCutout = pieces{cutoutsINrowY, 1};
+    fullMap(yEnd-offsetY+1:yEnd, 1:offsetX) = leftBottomCutout(end-offsetY+1:end, 1:offsetX);
+    
+    xEnd = positionsEndX(cutoutsINrowX);
+    rightTopCutout = pieces{1, cutoutsINrowX};
+    fullMap(1:offsetY, xEnd-offsetX+1:xEnd) = rightTopCutout(1:offsetY, end-offsetX+1:end);
+    
+    % recollect last bottom right piece
+    yStart = positionsStartY(cutoutsINrowY);
+    yEnd = positionsEndY(cutoutsINrowY);
+    xStart = positionsStartX(cutoutsINrowX);
+    xEnd = positionsEndX(cutoutsINrowX);
+    rightBottomCutout = pieces{cutoutsINrowY, cutoutsINrowX};
+    fullMap(yStart+offsetY:yEnd, xStart+offsetX:xEnd) = rightBottomCutout(offsetY+1:end, offsetX+1:end);
+end
