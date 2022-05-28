@@ -73,7 +73,7 @@ ManualPos(Invalid==1,:) = [];
 % Get voronoi cells
 VoronoiEdges = [];
 
-if ~isempty(ManualPos)
+if ~isempty(ManualPos) && (length(ManualPos(:, 1)) > 2)
     ManualPos = unique(ManualPos, 'rows');
     [vx, vy] = voronoi(ManualPos(:,1),ManualPos(:,2));
 
