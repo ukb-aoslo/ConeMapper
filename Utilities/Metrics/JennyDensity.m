@@ -30,7 +30,6 @@ classdef JennyDensity < handle
         function obj = JennyDensity(coneLocs, imageSize, numOfNerestCones, coneAreas)
             %JENNYDENSITY Construct an instance of this class
             %   Detailed explanation goes here
-            disp(nargin)
             if nargin > 0
                 obj.Vorocones = coneLocs;
             end
