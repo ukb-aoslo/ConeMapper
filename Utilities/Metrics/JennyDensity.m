@@ -27,7 +27,7 @@ classdef JennyDensity < handle
     end
     
     methods
-        function obj = JennyDensity(coneLocs, imageSize, numOfNerestCones, coneAreas)
+        function obj = JennyDensity(coneLocs, imageSize, numOfNerestCones, sourceImage)
             %JENNYDENSITY Construct an instance of this class
             %   Detailed explanation goes here
             if nargin > 0
@@ -46,16 +46,16 @@ classdef JennyDensity < handle
                 obj.NumOfNearestCones = numOfNerestCones;
             end
             
-            if nargin > 3
-                obj.ConeAreas = coneAreas;
-            else
-                obj.ConeAreas = JennyDensity.GetConeAreas(obj.Vorocones);
+            obj.ConeAreas = JennyDensity.GetConeAreas(obj.Vorocones);
+                        
+            if nargin < 4
+                sourceImage = [];
             end
             
-            Recalculate(obj, 0);
+            Recalculate(obj, 0, sourceImage);
         end
         
-        function Recalculate(obj, withConeAreas)
+        function Recalculate(obj, withConeAreas, sourceImage)
         %   Recalculate(obj, withConeAreas) 
         %   recalculates all the data for density map.
         %   - obj - the current class object.
@@ -65,9 +65,13 @@ classdef JennyDensity < handle
                 obj.ConeAreas = JennyDensity.GetConeAreas(obj.Vorocones);
             end
             
+            if nargin < 3
+                sourceImage = [];
+            end
+            
             
             obj.DensityMatrix = JennyDensity.GetDensityMatrix(obj.Vorocones, obj.ImageHeight, obj.ImageWidth, ...
-                obj.NumOfNearestCones, obj.ConeAreas);
+                obj.NumOfNearestCones, obj.ConeAreas, sourceImage);
             
             [obj.PCD_cppa, obj.MinDensity_cppa, obj.PCD_loc] = JennyDensity.GetMinMaxCPPA(obj.DensityMatrix);
             
@@ -98,7 +102,7 @@ classdef JennyDensity < handle
         end
 
         function densityMatrix = GetDensityMatrix(conelocs, imageHeight, imageWidth, ...
-            numOfNearestCones, coneArea)
+            numOfNearestCones, coneArea, sourceImage)
         %   densityMatrix = GetDensityMatrix(conelocs, imageHeight, imageWidth)
         %   returns a density matrix.
         %   - conelocs - locations of cones.
@@ -106,12 +110,16 @@ classdef JennyDensity < handle
         %   - imageWidth - width of the source image.
         %   - numOfNearestCones - number of cones in the area.
         %   - coneArea - array with area of each cone.
-
+            
+%             boundingPoly = boundary(conelocs);
+% %             [~, on] = inpolygon(conelocs(:, 1), conelocs(:, 2), conelocs(boundingPoly, 1), conelocs(boundingPoly, 2));
+%             conelocs(boundingPoly, :) = NaN;
+            
             % get starting coordinates (exclude the border area)
-            pixelStartX = round(min(conelocs(:,1))) + 30;
-            pixelEndX   = round(max(conelocs(:,1))) - 30;
-            pixelStartY = round(min(conelocs(:,2))) + 30;
-            pixelEndY   = round(max(conelocs(:,2))) - 30;
+            pixelStartX = round(min(conelocs(:,1)));
+            pixelEndX   = round(max(conelocs(:,1)));
+            pixelStartY = round(min(conelocs(:,2)));
+            pixelEndY   = round(max(conelocs(:,2)));
 
             % preallocate memory for density matrix
             densityMatrix = nan(imageHeight, imageWidth);
@@ -149,7 +157,9 @@ classdef JennyDensity < handle
                         densityMatrix(coorY, coorX) = NaN;
                     else
                         % calculate sum area of selected cones
+%                         areaNearestVoronois = areaNearestVoronois(~isnan(areaNearestVoronois));
                         densityAreaVoronois = sum(areaNearestVoronois);
+%                         numOfPoints = length(areaNearestVoronois);
                         % get density as number of cones divided by area they cover
                         % cppa - cones per pixel area
                         densityMatrix(coorY, coorX) = numOfNearestCones / densityAreaVoronois;
@@ -159,6 +169,9 @@ classdef JennyDensity < handle
                 waitbar((coorY - pixelStartY) / nSteps)
             end                                            % end of coorY loop
 
+            if ~isempty(sourceImage)
+                densityMatrix(sourceImage < 8) = NaN;
+            end
             close(progressBar);
         end
 
