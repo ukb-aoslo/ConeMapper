@@ -24,6 +24,10 @@ classdef JennyDensity < handle
         CDC20_density = 0;
         CDC20_loc = [];
         Stats2 = [];
+        
+        ApproximatedPoints = [];
+        GoodPoints = [];
+        GoodBoundaryIndicies = [];
     end
     
     methods
@@ -69,8 +73,8 @@ classdef JennyDensity < handle
                 sourceImage = [];
             end
             
-            
-            obj.DensityMatrix = JennyDensity.GetDensityMatrix(obj.Vorocones, obj.ImageHeight, obj.ImageWidth, ...
+            [obj.ApproximatedPoints, obj.GoodPoints, obj.GoodBoundaryIndicies, obj.DensityMatrix] = ...
+                JennyDensity.GetDensityMatrix(obj.Vorocones, obj.ImageHeight, obj.ImageWidth, ...
                 obj.NumOfNearestCones, obj.ConeAreas, sourceImage);
             
             [obj.PCD_cppa, obj.MinDensity_cppa, obj.PCD_loc] = JennyDensity.GetMinMaxCPPA(obj.DensityMatrix);
@@ -101,7 +105,7 @@ classdef JennyDensity < handle
             end
         end
 
-        function densityMatrix = GetDensityMatrix(conelocs, imageHeight, imageWidth, ...
+        function [approxPoints, goodPoints, goodBoundaryIndicies, densityMatrix] = GetDensityMatrix(conelocs, imageHeight, imageWidth, ...
             numOfNearestCones, coneArea, sourceImage)
         %   densityMatrix = GetDensityMatrix(conelocs, imageHeight, imageWidth)
         %   returns a density matrix.
@@ -123,7 +127,11 @@ classdef JennyDensity < handle
 
             % preallocate memory for density matrix
             densityMatrix = nan(imageHeight, imageWidth);
-
+            approxPoints = nan(imageHeight*imageWidth, 2);
+            approxPointsIndex = 1;
+            goodPoints = nan(imageHeight*imageWidth, 2);
+            goodPointsIndex = 1;
+            
             % vectors with ROI pixel indexes
             pixelsY = pixelStartY:pixelEndY;
             pixelsX = pixelStartX:pixelEndX;
@@ -153,22 +161,43 @@ classdef JennyDensity < handle
 
                     % if there is at list one cone with extremly big area
                     if any(isnan(areaNearestVoronois))
+                        coneAreaSorted = coneArea(distIDXsorted);
+                        coneAreaSorted = coneAreaSorted(~isnan(coneAreaSorted));
+                        areaNearestVoronois = coneAreaSorted(smallestIdx);
+                        approxPoints(approxPointsIndex, :) = [coorX, coorY];
+                        approxPointsIndex = approxPointsIndex + 1;
+                        
+                        % TODO: FINISH IT!!!!
                         % invalid density --> pixel too close to border
                         densityMatrix(coorY, coorX) = NaN;
                     else
-                        % calculate sum area of selected cones
-%                         areaNearestVoronois = areaNearestVoronois(~isnan(areaNearestVoronois));
-                        densityAreaVoronois = sum(areaNearestVoronois);
-%                         numOfPoints = length(areaNearestVoronois);
-                        % get density as number of cones divided by area they cover
-                        % cppa - cones per pixel area
-                        densityMatrix(coorY, coorX) = numOfNearestCones / densityAreaVoronois;
+                        
+                        goodPoints(approxPointsIndex, :) = [coorX, coorY];
+                        goodPointsIndex = goodPointsIndex + 1;
                     end
+                    % calculate sum area of selected cones
+%                         areaNearestVoronois = areaNearestVoronois(~isnan(areaNearestVoronois));
+                    densityAreaVoronois = sum(areaNearestVoronois);
+%                         numOfPoints = length(areaNearestVoronois);
+                    % get density as number of cones divided by area they cover
+                    % cppa - cones per pixel area
+                    densityMatrix(coorY, coorX) = numOfNearestCones / densityAreaVoronois;
+                    
                 end                                        % end of coorX loop
 
                 waitbar((coorY - pixelStartY) / nSteps)
             end                                            % end of coorY loop
 
+            if approxPointsIndex <= length(approxPoints)
+                approxPoints(approxPointsIndex:end, :) = [];
+            end
+            
+            if goodPointsIndex <= length(goodPoints)
+                goodPoints(goodPointsIndex:end, :) = [];
+            end
+            
+            goodBoundaryIndicies = boundary(goodPoints(:, 1), goodPoints(:, y));
+            
             if ~isempty(sourceImage)
                 densityMatrix(sourceImage < 8) = NaN;
             end
