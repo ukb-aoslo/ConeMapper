@@ -25,9 +25,9 @@ classdef JennyDensity < handle
         CDC20_loc = [];
         Stats2 = [];
         
-        ApproximatedPoints = [];
-        GoodPoints = [];
-        GoodBoundaryIndicies = [];
+        % points which represent a polygon inside of which we have non
+        % aproximated map
+        GoodPointsEdge = [];
     end
     
     methods
@@ -73,7 +73,7 @@ classdef JennyDensity < handle
                 sourceImage = [];
             end
             
-            [obj.ApproximatedPoints, obj.GoodPoints, obj.GoodBoundaryIndicies, obj.DensityMatrix] = ...
+            [obj.GoodPointsEdge, obj.DensityMatrix] = ...
                 JennyDensity.GetDensityMatrix(obj.Vorocones, obj.ImageHeight, obj.ImageWidth, ...
                 obj.NumOfNearestCones, obj.ConeAreas, sourceImage);
             
@@ -105,7 +105,7 @@ classdef JennyDensity < handle
             end
         end
 
-        function [approxPoints, goodPoints, goodBoundaryIndicies, densityMatrix] = GetDensityMatrix(conelocs, imageHeight, imageWidth, ...
+        function [goodPointsEdge, densityMatrix] = GetDensityMatrix(conelocs, imageHeight, imageWidth, ...
             numOfNearestCones, coneArea, sourceImage)
         %   densityMatrix = GetDensityMatrix(conelocs, imageHeight, imageWidth)
         %   returns a density matrix.
@@ -115,9 +115,7 @@ classdef JennyDensity < handle
         %   - numOfNearestCones - number of cones in the area.
         %   - coneArea - array with area of each cone.
             
-%             boundingPoly = boundary(conelocs);
-% %             [~, on] = inpolygon(conelocs(:, 1), conelocs(:, 2), conelocs(boundingPoly, 1), conelocs(boundingPoly, 2));
-%             conelocs(boundingPoly, :) = NaN;
+            boundingPoly = boundary(conelocs(:, 1), conelocs(:, 2), 1);
             
             % get starting coordinates (exclude the border area)
             pixelStartX = round(min(conelocs(:,1)));
@@ -127,10 +125,7 @@ classdef JennyDensity < handle
 
             % preallocate memory for density matrix
             densityMatrix = nan(imageHeight, imageWidth);
-            approxPoints = nan(imageHeight*imageWidth, 2);
-            approxPointsIndex = 1;
-            goodPoints = nan(imageHeight*imageWidth, 2);
-            goodPointsIndex = 1;
+            goodPointsMap = zeros(imageHeight, imageWidth);
             
             % vectors with ROI pixel indexes
             pixelsY = pixelStartY:pixelEndY;
@@ -155,48 +150,33 @@ classdef JennyDensity < handle
                     % pixel
                     distIDXsorted = originalColumnIndexes(:, coorX - pixelStartX + 1);
                     smallestIdx =  distIDXsorted(1:numOfNearestCones);
-
+                    
+                    isBoundingPolyPoint = ismember(smallestIdx, boundingPoly);
+                    
+                    % if there is at list one cone with extremly big area
+                    if any(isBoundingPolyPoint)
+                        isBoundingPolyPoint = ismember(distIDXsorted, boundingPoly);
+                        distIDXsorted = distIDXsorted(~isBoundingPolyPoint);
+                        smallestIdx =  distIDXsorted(1:numOfNearestCones);
+                    else
+                        goodPointsMap(coorY, coorX) = 1;
+                    end
+                    
                     % get voronoi areas of cones
                     areaNearestVoronois = coneArea(smallestIdx);
-
-                    % if there is at list one cone with extremly big area
-                    if any(isnan(areaNearestVoronois))
-                        coneAreaSorted = coneArea(distIDXsorted);
-                        coneAreaSorted = coneAreaSorted(~isnan(coneAreaSorted));
-                        areaNearestVoronois = coneAreaSorted(smallestIdx);
-                        approxPoints(approxPointsIndex, :) = [coorX, coorY];
-                        approxPointsIndex = approxPointsIndex + 1;
-                        
-                        % TODO: FINISH IT!!!!
-                        % invalid density --> pixel too close to border
-                        densityMatrix(coorY, coorX) = NaN;
-                    else
-                        
-                        goodPoints(approxPointsIndex, :) = [coorX, coorY];
-                        goodPointsIndex = goodPointsIndex + 1;
-                    end
+                    
                     % calculate sum area of selected cones
-%                         areaNearestVoronois = areaNearestVoronois(~isnan(areaNearestVoronois));
                     densityAreaVoronois = sum(areaNearestVoronois);
-%                         numOfPoints = length(areaNearestVoronois);
                     % get density as number of cones divided by area they cover
                     % cppa - cones per pixel area
-                    densityMatrix(coorY, coorX) = numOfNearestCones / densityAreaVoronois;
-                    
+                    densityMatrix(coorY, coorX) = numOfNearestCones / densityAreaVoronois;                    
                 end                                        % end of coorX loop
 
                 waitbar((coorY - pixelStartY) / nSteps)
             end                                            % end of coorY loop
 
-            if approxPointsIndex <= length(approxPoints)
-                approxPoints(approxPointsIndex:end, :) = [];
-            end
-            
-            if goodPointsIndex <= length(goodPoints)
-                goodPoints(goodPointsIndex:end, :) = [];
-            end
-            
-            goodBoundaryIndicies = boundary(goodPoints(:, 1), goodPoints(:, y));
+            % get the edge of non aproximated area
+            goodPointsEdge = JennyDensity.FindMapEdgeByConelocs(goodPointsMap, conelocs);
             
             if ~isempty(sourceImage)
                 densityMatrix(sourceImage < 8) = NaN;
@@ -237,6 +217,32 @@ classdef JennyDensity < handle
 
             CDC20_loc = [round(stats2.WeightedCentroid(1)), round(stats2.WeightedCentroid(2))];
             CDC20_density = densityMatrix(round(CDC20_loc(2)), round(CDC20_loc(1)));
+        end
+        
+        function boundaryConelocs = FindMapEdgeByConelocs(BWMap, conelocs)
+        %   boundaryConelocs = FindMapEdgeByConelocs(BWMap, conelocs)
+        %   returns boundary based on conelocs of a map.
+        %   - BWmap - the back-white map.
+        %   - conelocs - cone locations on BWMap
+            
+            % round conelocs to use them as indices
+            conelocs = round(conelocs);
+            [rows, cols, ~] = size(BWMap);
+            conelocs(conelocs(:, 1) > rows, :) = [];
+            conelocs(conelocs(:, 2) > cols, :) = [];
+            
+            % convert them to linear indicies
+            indexes = sub2ind([rows, cols], conelocs(:, 2), conelocs(:, 1));
+            % mark points where cones are placed on actual map
+            onesLogicArray = BWMap(indexes) == 1;
+            BWMap(indexes(onesLogicArray)) = 2;
+            conesInsideMap = find(BWMap == 2);
+            % get normal coordinates of that cones
+            [row,col] = ind2sub([rows, cols], conesInsideMap);
+            
+            % find a boundary of the set
+            boundingPoly = boundary(row, col);
+            boundaryConelocs = [row(boundingPoly), col(boundingPoly)];
         end
     end
 end
