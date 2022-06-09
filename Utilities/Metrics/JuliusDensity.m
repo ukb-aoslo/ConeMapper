@@ -1,6 +1,7 @@
-classdef JennyDensity < handle
-    %JENNYDENSITY calculates the cone density using the Voronoi patch areas of
-    % the k nearest cones to each pixel by Jenny's algorithm
+classdef JuliusDensity < handle
+    %JuliusDensity calculates the cone density using average of the
+    %distances to the neighbor cones. Neighbor in terms of the Voronoi
+    %diagram
     
     % requested input data
     % - locations of all cones which could be identified in the reference image
@@ -12,7 +13,6 @@ classdef JennyDensity < handle
         ConeAreas = [];
         ImageHeight = 0;
         ImageWidth = 0;
-        NumOfNearestCones = 150;
         DensityMatrix = [];
         
         % for PCD
@@ -31,8 +31,8 @@ classdef JennyDensity < handle
     end
     
     methods
-        function obj = JennyDensity(coneLocs, imageSize, numOfNerestCones, sourceImage)
-            %JENNYDENSITY Construct an instance of this class
+        function obj = JuliusDensity(coneLocs, imageSize, sourceImage)
+            %JuliusDensity Construct an instance of this class
             if nargin > 0
                 obj.Vorocones = coneLocs;
             end
@@ -45,65 +45,33 @@ classdef JennyDensity < handle
                 obj.ImageWidth = max(coneLocs(:, 1));
             end
             
-            if nargin > 2
-                obj.NumOfNearestCones = numOfNerestCones;
-            end
-            
-            obj.ConeAreas = JennyDensity.GetConeAreas(obj.Vorocones);
-                        
-            if nargin < 4
+            if nargin < 3
                 sourceImage = [];
             end
             
             Recalculate(obj, 0, sourceImage);
         end
         
-        function Recalculate(obj, withConeAreas, sourceImage)
-        %   Recalculate(obj, withConeAreas) 
+        function Recalculate(obj, sourceImage)
+        %   Recalculate(obj, sourceImage) 
         %   recalculates all the data for density map.
-        %   - obj - the current class object.
-        %   - withConeAreas - the flag that indicates that coneAreas must
-        %   be recalculated.
-            if withConeAreas
-                obj.ConeAreas = JennyDensity.GetConeAreas(obj.Vorocones);
-            end
-            
+        %   - obj - the current class object.            
             if nargin < 3
                 sourceImage = [];
             end
             
             [obj.GoodPointsEdge, obj.DensityMatrix] = ...
-                JennyDensity.GetDensityMatrix(obj.Vorocones, obj.ImageHeight, obj.ImageWidth, ...
+                JuliusDensity.GetDensityMatrix(obj.Vorocones, obj.ImageHeight, obj.ImageWidth, ...
                 obj.NumOfNearestCones, obj.ConeAreas, sourceImage);
             
-            [obj.PCD_cppa, obj.MinDensity_cppa, obj.PCD_loc] = JennyDensity.GetMinMaxCPPA(obj.DensityMatrix);
+            [obj.PCD_cppa, obj.MinDensity_cppa, obj.PCD_loc] = JuliusDensity.GetMinMaxCPPA(obj.DensityMatrix);
             
-            [obj.CDC20_density, obj.CDC20_loc, obj.Stats2] = JennyDensity.GetCDC(obj.PCD_cppa, obj.MinDensity_cppa, obj.DensityMatrix);
+            [obj.CDC20_density, obj.CDC20_loc, obj.Stats2] = JuliusDensity.GetCDC(obj.PCD_cppa, obj.MinDensity_cppa, obj.DensityMatrix);
         end
         
     end
     
     methods(Static)
-        function coneArea = GetConeAreas(vorocones)
-        %   coneArea = GetConeAreas(vorocones) returns area of each
-        %   cone and number of neighbor cones for each cone.
-        %   - vorocones - N*2 vector where first column is X coordinate of N cones,
-        %       second column is Y coordinate of N cones.
-
-            dt = delaunayTriangulation(vorocones(:,1),vorocones(:,2));
-            [V,C] = voronoiDiagram(dt);
-            nVoronoiCells = length ( C );
-            coneArea = zeros(nVoronoiCells, 1);
-            for cone = 1 : nVoronoiCells
-                coneArea(cone) = polyarea(V(C{cone},1),V(C{cone},2));
-
-                % exclude extremely high border values 
-                if coneArea(cone) > 1000
-                    coneArea(cone) = NaN;
-                end
-            end
-        end
-
         function [goodPointsEdge, densityMatrix] = GetDensityMatrix(conelocs, imageHeight, imageWidth, ...
             numOfNearestCones, coneArea, sourceImage)
         %   densityMatrix = GetDensityMatrix(conelocs, imageHeight, imageWidth)
