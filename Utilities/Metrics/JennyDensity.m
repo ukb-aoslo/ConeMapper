@@ -28,6 +28,7 @@ classdef JennyDensity < handle
         % points which represent a polygon inside of which we have non
         % aproximated map
         GoodPointsEdge = [];
+        GoodPointsMap = [];
     end
     
     methods
@@ -72,7 +73,7 @@ classdef JennyDensity < handle
                 sourceImage = [];
             end
             
-            [obj.GoodPointsEdge, obj.DensityMatrix] = ...
+            [obj.GoodPointsMap, obj.GoodPointsEdge, obj.DensityMatrix] = ...
                 JennyDensity.GetDensityMatrix(obj.Vorocones, obj.ImageHeight, obj.ImageWidth, ...
                 obj.NumOfNearestCones, obj.ConeAreas, sourceImage);
             
@@ -104,7 +105,7 @@ classdef JennyDensity < handle
             end
         end
 
-        function [goodPointsEdge, densityMatrix] = GetDensityMatrix(conelocs, imageHeight, imageWidth, ...
+        function [goodPointsMap, goodPointsEdge, densityMatrix] = GetDensityMatrix(conelocs, imageHeight, imageWidth, ...
             numOfNearestCones, coneArea, sourceImage)
         %   densityMatrix = GetDensityMatrix(conelocs, imageHeight, imageWidth)
         %   returns a density matrix.
@@ -227,8 +228,8 @@ classdef JennyDensity < handle
             % round conelocs to use them as indices
             conelocs = round(conelocs);
             [rows, cols, ~] = size(BWMap);
-            conelocs(conelocs(:, 1) > rows, :) = [];
-            conelocs(conelocs(:, 2) > cols, :) = [];
+            conelocs(conelocs(:, 2) > rows, :) = [];
+            conelocs(conelocs(:, 1) > cols, :) = [];
             
             % convert them to linear indicies
             indexes = sub2ind([rows, cols], conelocs(:, 2), conelocs(:, 1));
@@ -240,8 +241,8 @@ classdef JennyDensity < handle
             [row,col] = ind2sub([rows, cols], conesInsideMap);
             
             % find a boundary of the set
-            boundingPoly = boundary(row, col);
-            boundaryConelocs = [row(boundingPoly), col(boundingPoly)];
+            boundingPoly = boundary(col, row);
+            boundaryConelocs = [col(boundingPoly), row(boundingPoly)];
         end
     end
 end
