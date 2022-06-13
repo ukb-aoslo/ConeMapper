@@ -82,73 +82,78 @@ classdef JuliusDensity < handle
         %   - numOfNearestCones - number of cones in the area.
         %   - coneArea - array with area of each cone.
             
+            conelocs = unique(conelocs, 'rows', 'stable');
+            % prepare data for voronoi plot
+            conelocs(conelocs(:,1) < 0, :) = [];
+            conelocs(conelocs(:,1) > size(I,2), :) = [];
+            conelocs(conelocs(:,2) < 0, :) = [];
+            conelocs(conelocs(:,2) > size(I,1), :) = [];
+
             boundingPoly = boundary(conelocs(:, 1), conelocs(:, 2), 1);
             
-            % get starting coordinates (exclude the border area)
-            pixelStartX = round(min(conelocs(:,1)));
-            pixelEndX   = round(max(conelocs(:,1)));
-            pixelStartY = round(min(conelocs(:,2)));
-            pixelEndY   = round(max(conelocs(:,2)));
-
-            % preallocate memory for density matrix
-            densityMatrix = nan(imageHeight, imageWidth);
-            goodPointsMap = zeros(imageHeight, imageWidth);
+            vorocones = conelocs(:, 1:2);
+            voronoiDelaunayTriang = delaunayTriangulation(vorocones);
+            % V - verticies of polygons, C - the polygons constructed by V
+            [V,C] = voronoiDiagram(voronoiDelaunayTriang);
             
-            % vectors with ROI pixel indexes
-            pixelsY = pixelStartY:pixelEndY;
-            pixelsX = pixelStartX:pixelEndX;
-            % number of steps
-            nSteps = length(pixelsY);
-
-            progressBar = waitbar(0, ['ConeDensity analysis - ', num2str(numOfNearestCones),' nearest cones']);
-
-            % for each column
-            for coorY = pixelsY                  % central pixel (x) of selection
-                % get row coordinates in pixels
-                row = combvec(pixelsX, coorY)';
-                % calculate distances from pixels in the row to each cone
-                distances = pdist2(conelocs, row);
-                % sort each column ascending
-                [~, originalColumnIndexes] = sort(distances, 1);
-
-                % for each pixel
-                for coorX = pixelsX              % central pixel (y) of selection
-                    % get indexes of cones with the smallest distances to current
-                    % pixel
-                    distIDXsorted = originalColumnIndexes(:, coorX - pixelStartX + 1);
-                    smallestIdx =  distIDXsorted(1:numOfNearestCones);
-                    
-                    isBoundingPolyPoint = ismember(smallestIdx, boundingPoly);
-                    
-                    % if there is at list one cone with extremly big area
-                    if any(isBoundingPolyPoint)
-                        isBoundingPolyPoint = ismember(distIDXsorted, boundingPoly);
-                        distIDXsorted = distIDXsorted(~isBoundingPolyPoint);
-                        smallestIdx =  distIDXsorted(1:numOfNearestCones);
-                    else
-                        goodPointsMap(coorY, coorX) = 1;
-                    end
-                    
-                    % get voronoi areas of cones
-                    areaNearestVoronois = coneArea(smallestIdx);
-                    
-                    % calculate sum area of selected cones
-                    densityAreaVoronois = sum(areaNearestVoronois);
-                    % get density as number of cones divided by area they cover
-                    % cppa - cones per pixel area
-                    densityMatrix(coorY, coorX) = numOfNearestCones / densityAreaVoronois;                    
-                end                                        % end of coorX loop
-
-                waitbar((coorY - pixelStartY) / nSteps)
-            end                                            % end of coorY loop
-
-            % get the edge of non aproximated area
-            goodPointsEdge = JennyDensity.FindMapEdgeByConelocs(goodPointsMap, conelocs);
+            numberOfClosedPolygons = length(C);
+            % Create a matrix from list of Verice inedexes (empty values filled by NaN)
+            lengthesC = cellfun('length',C);
+            maxLengthesC = max(lengthesC);
+            % concat all points in one array from cell array of arrays
+            allPolyConcateneted = cat(2, C{:});
+            % preallocate memory for matrix
+            matrixC = zeros([maxLengthesC + 1, numberOfClosedPolygons]);
+            % find indexes where polygons definition ends
+            indexes = sub2ind(size(matrixC), lengthesC(:).' + 1, 1:numberOfClosedPolygons);
+            % fill it with NaN
+            matrixC(indexes) =  1;
+            matrixC = cumsum(matrixC(1:end - 1,:), 1);
+            matrixC(matrixC == 1) = NaN;
+            % fill polygons in the rest places of matrix
+            matrixC(matrixC == 0) = allPolyConcateneted;
+            matrixC = matrixC';
             
-            if ~isempty(sourceImage)
-                densityMatrix(sourceImage < 8) = NaN;
+            % find neighbors for all cones
+            neightborLists = cell(numberOfClosedPolygons, 1);
+            for indCone = 1:numberOfClosedPolygons
+                if any(boundingPoly == indCone)
+                    continue;
+                end
+                
+                polyVerticies = C{indCone};
+                % we exclude vertex with [Inf, Inf] coords
+                polyVerticies(polyVerticies == 1) = [];
+                neighborsTemp = [];
+                for indNeighbor = 1:length(polyVerticies)
+                    % find neighbors with current vertex
+                    [row, ~] = find(matrixC == polyVerticies(indNeighbor));
+                    % exclude current cone
+                    neighborsTemp = [neighborsTemp, row(row ~= indCone)'];
+                end
+                neightborLists{indCone} = unique(neighborsTemp);
             end
-            close(progressBar);
+            
+            % calc neighbor dists
+            avgDistancesToNeighbors = zeros(numberOfClosedPolygons, 1);
+            for indCone = 1:numberOfClosedPolygons
+                avgDistancesToNeighbors(indCone) = mean(pdist2(vorocones(indCone, :), vorocones(neightborLists{indCone}, :)));
+            end
+            
+            % create an alphaShape
+            voronoiAlphaShape = alphaShape(vorocones(:, 1), vorocones(:, 2));
+            voronoiAlphaShape.Alpha = 2 * voronoiAlphaShape.Alpha;
+            V(V(:, 1) == Inf | V(:, 2) == Inf, :) = -1;
+            % fill with NaN all verticies which is out of
+            % AlphaShape
+            tf = inShape(voronoiAlphaShape, V(:,1), V(:, 2));
+            V(~tf, 1) = NaN;
+            V(~tf, 2) = NaN;
+            
+%             patch('Faces',matrixC,'Vertices',V,'FaceVertexCData',avgDistancesToNeighbors,'FaceColor','flat');
+%             colorbar;
+%             oldcmap = colormap;
+%             colormap( flipud(oldcmap) );
         end
 
         function [PCD_cppa, minDensity_cppa, PCD_loc] = GetMinMaxCPPA(densityMatrix)
