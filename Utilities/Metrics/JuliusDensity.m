@@ -10,7 +10,6 @@ classdef JuliusDensity < handle
     properties
         % for density map calculation
         Vorocones = [];
-        ConeAreas = [];
         ImageHeight = 0;
         ImageWidth = 0;
         DensityMatrix = [];
@@ -49,7 +48,7 @@ classdef JuliusDensity < handle
                 sourceImage = [];
             end
             
-            Recalculate(obj, 0, sourceImage);
+            Recalculate(obj, sourceImage);
         end
         
         function Recalculate(obj, sourceImage)
@@ -61,8 +60,7 @@ classdef JuliusDensity < handle
             end
             
             [obj.GoodPointsEdge, obj.DensityMatrix] = ...
-                JuliusDensity.GetDensityMatrix(obj.Vorocones, obj.ImageHeight, obj.ImageWidth, ...
-                obj.NumOfNearestCones, obj.ConeAreas, sourceImage);
+                JuliusDensity.GetDensityMatrix(obj.Vorocones, obj.ImageHeight, obj.ImageWidth, sourceImage);
             
             [obj.PCD_cppa, obj.MinDensity_cppa, obj.PCD_loc] = JuliusDensity.GetMinMaxCPPA(obj.DensityMatrix);
             
@@ -72,8 +70,7 @@ classdef JuliusDensity < handle
     end
     
     methods(Static)
-        function [goodPointsEdge, densityMatrix] = GetDensityMatrix(conelocs, imageHeight, imageWidth, ...
-            numOfNearestCones, coneArea, sourceImage)
+        function [goodPointsEdge, densityMatrix] = GetDensityMatrix(conelocs, imageHeight, imageWidth, sourceImage)
         %   densityMatrix = GetDensityMatrix(conelocs, imageHeight, imageWidth)
         %   returns a density matrix.
         %   - conelocs - locations of cones.
@@ -85,9 +82,9 @@ classdef JuliusDensity < handle
             conelocs = unique(conelocs, 'rows', 'stable');
             % prepare data for voronoi plot
             conelocs(conelocs(:,1) < 0, :) = [];
-            conelocs(conelocs(:,1) > size(I,2), :) = [];
+            conelocs(conelocs(:,1) > imageWidth, :) = [];
             conelocs(conelocs(:,2) < 0, :) = [];
-            conelocs(conelocs(:,2) > size(I,1), :) = [];
+            conelocs(conelocs(:,2) > imageHeight, :) = [];
 
             boundingPoly = boundary(conelocs(:, 1), conelocs(:, 2), 1);
             
@@ -140,16 +137,32 @@ classdef JuliusDensity < handle
                 avgDistancesToNeighbors(indCone) = mean(pdist2(vorocones(indCone, :), vorocones(neightborLists{indCone}, :)));
             end
             
-            % create an alphaShape
-            voronoiAlphaShape = alphaShape(vorocones(:, 1), vorocones(:, 2));
-            voronoiAlphaShape.Alpha = 2 * voronoiAlphaShape.Alpha;
-            V(V(:, 1) == Inf | V(:, 2) == Inf, :) = -1;
-            % fill with NaN all verticies which is out of
-            % AlphaShape
-            tf = inShape(voronoiAlphaShape, V(:,1), V(:, 2));
-            V(~tf, 1) = NaN;
-            V(~tf, 2) = NaN;
+            % interpolate the result to get a map
+            [X,Y] = meshgrid(1:imageWidth, 1:imageHeight);
+            X = reshape(X,[],1);
+            Y = reshape(Y,[],1);
+            Vq = griddata(floor(vorocones(:, 1)), floor(vorocones(:, 2)), avgDistancesToNeighbors, X, Y, 'cubic');
+            Vq = reshape(Vq, imageHeight, imageWidth);
+            densityMatrix = 1./Vq;
             
+%             how to filter the result
+            densityMatrix = sgolayfilt(1./Vq, 3, 11); 
+            densityMatrix = sgolayfilt(densityMatrix' , 3, 11)'; 
+%             imagesc(test');
+            goodPointsEdge = [];
+            
+            % to plot Voronoi
+            
+            % create an alphaShape
+%             voronoiAlphaShape = alphaShape(vorocones(:, 1), vorocones(:, 2));
+%             voronoiAlphaShape.Alpha = 2 * voronoiAlphaShape.Alpha;
+%             V(V(:, 1) == Inf | V(:, 2) == Inf, :) = -1;
+%             % fill with NaN all verticies which is out of
+%             % AlphaShape
+%             tf = inShape(voronoiAlphaShape, V(:,1), V(:, 2));
+%             V(~tf, 1) = NaN;
+%             V(~tf, 2) = NaN;
+%             
 %             patch('Faces',matrixC,'Vertices',V,'FaceVertexCData',avgDistancesToNeighbors,'FaceColor','flat');
 %             colorbar;
 %             oldcmap = colormap;
