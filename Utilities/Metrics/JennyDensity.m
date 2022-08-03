@@ -36,6 +36,8 @@ classdef JennyDensity < handle
             %JENNYDENSITY Construct an instance of this class
             if nargin > 0
                 obj.Vorocones = coneLocs;
+            else
+                return;
             end
             
             if nargin > 1
@@ -49,25 +51,25 @@ classdef JennyDensity < handle
             if nargin > 2
                 obj.NumOfNearestCones = numOfNerestCones;
             end
-            
-            obj.ConeAreas = JennyDensity.GetConeAreas(obj.Vorocones);
                         
             if nargin < 4
                 sourceImage = [];
             end
             
-            Recalculate(obj, 0, sourceImage);
+            Recalculate(obj, sourceImage);
         end
         
-        function Recalculate(obj, withConeAreas, sourceImage)
-        %   Recalculate(obj, withConeAreas) 
+        function Recalculate(obj, sourceImage)
+        %   Recalculate(obj, sourceImage) 
         %   recalculates all the data for density map.
         %   - obj - the current class object.
-        %   - withConeAreas - the flag that indicates that coneAreas must
-        %   be recalculated.
-            if withConeAreas
-                obj.ConeAreas = JennyDensity.GetConeAreas(obj.Vorocones);
+        %   - sourceImage - image of retina.
+        
+            if isempty(obj.Vorocones) || obj.ImageHeight == 0 || obj.ImageWidth == 0
+                error("Invalid JennyDinsity class. No data to calculate density");
             end
+            
+            obj.ConeAreas = JennyDensity.GetConeAreas(obj.Vorocones);
             
             if nargin < 3
                 sourceImage = [];
@@ -82,9 +84,62 @@ classdef JennyDensity < handle
             [obj.CDC20_density, obj.CDC20_loc, obj.Stats2] = JennyDensity.GetCDC(obj.PCD_cppa, obj.MinDensity_cppa, obj.DensityMatrix);
         end
         
+        function s = saveobj(obj)
+            % for density map calculation
+            s.Vorocones = obj.Vorocones;
+            s.ImageHeight = obj.ImageHeight;
+            s.ImageWidth = obj.ImageWidth;
+            s.NumOfNearestCones = obj.NumOfNearestCones;
+            s.DensityMatrix = obj.DensityMatrix;
+
+            % for PCD
+            s.PCD_cppa = obj.PCD_cppa;
+            s.MinDensity_cppa = obj.MinDensity_cppa;
+            s.PCD_loc = obj.PCD_loc;
+
+            % for CDC
+            s.CDC20_density = obj.CDC20_density;
+            s.CDC20_loc = obj.CDC20_loc;
+            s.Stats2 = obj.Stats2;
+
+            % points which represent a polygon inside of which we have non
+            % aproximated map
+            s.GoodPointsEdge = obj.GoodPointsEdge;
+            s.GoodPointsMap = obj.GoodPointsMap;
+        end
     end
     
     methods(Static)
+        function obj = loadobj(s)
+            if isstruct(s)
+                newObj = JennyDensity(); 
+                % for density map calculation
+                newObj.Vorocones = s.Vorocones;
+                newObj.ImageHeight = s.ImageHeight;
+                newObj.ImageWidth = s.ImageWidth;
+                newObj.NumOfNearestCones = s.NumOfNearestCones;
+                newObj.DensityMatrix = s.DensityMatrix;
+
+                % for PCD
+                newObj.PCD_cppa = s.PCD_cppa;
+                newObj.MinDensity_cppa = s.MinDensity_cppa;
+                newObj.PCD_loc = s.PCD_loc;
+
+                % for CDC
+                newObj.CDC20_density = s.CDC20_density;
+                newObj.CDC20_loc = s.CDC20_loc;
+                newObj.Stats2 = s.Stats2;
+
+                % points which represent a polygon inside of which we have non
+                % aproximated map
+                newObj.GoodPointsEdge = s.GoodPointsEdge;
+                newObj.GoodPointsMap = s.GoodPointsMap;
+                obj = newObj;
+            else
+                obj = s;
+            end
+        end
+        
         function coneArea = GetConeAreas(vorocones)
         %   coneArea = GetConeAreas(vorocones) returns area of each
         %   cone and number of neighbor cones for each cone.

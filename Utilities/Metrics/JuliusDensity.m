@@ -34,6 +34,8 @@ classdef JuliusDensity < handle
             %JuliusDensity Construct an instance of this class
             if nargin > 0
                 obj.Vorocones = coneLocs;
+            else
+                return;
             end
             
             if nargin > 1
@@ -67,9 +69,58 @@ classdef JuliusDensity < handle
             [obj.CDC20_density, obj.CDC20_loc, obj.Stats2] = JuliusDensity.GetCDC(obj.PCD_cppa, obj.MinDensity_cppa, obj.DensityMatrix);
         end
         
+        function s = saveobj(obj)
+            % for density map calculation
+            s.Vorocones = obj.Vorocones;
+            s.ImageHeight = obj.ImageHeight;
+            s.ImageWidth = obj.ImageWidth;
+            s.DensityMatrix = obj.DensityMatrix;
+
+            % for PCD
+            s.PCD_cppa = obj.PCD_cppa;
+            s.MinDensity_cppa = obj.MinDensity_cppa;
+            s.PCD_loc = obj.PCD_loc;
+
+            % for CDC
+            s.CDC20_density = obj.CDC20_density;
+            s.CDC20_loc = obj.CDC20_loc;
+            s.Stats2 = obj.Stats2;
+
+            % points which represent a polygon inside of which we have non
+            % aproximated map
+            s.GoodPointsEdge = obj.GoodPointsEdge;
+        end
     end
     
     methods(Static)
+        function obj = loadobj(s)
+            if isstruct(s)
+                newObj = JuliusDensity(); 
+                % for density map calculation
+                newObj.Vorocones = s.Vorocones;
+                newObj.ImageHeight = s.ImageHeight;
+                newObj.ImageWidth = s.ImageWidth;
+                newObj.DensityMatrix = s.DensityMatrix;
+
+                % for PCD
+                newObj.PCD_cppa = s.PCD_cppa;
+                newObj.MinDensity_cppa = s.MinDensity_cppa;
+                newObj.PCD_loc = s.PCD_loc;
+
+                % for CDC
+                newObj.CDC20_density = s.CDC20_density;
+                newObj.CDC20_loc = s.CDC20_loc;
+                newObj.Stats2 = s.Stats2;
+
+                % points which represent a polygon inside of which we have non
+                % aproximated map
+                newObj.GoodPointsEdge = s.GoodPointsEdge;
+                obj = newObj;
+            else
+                obj = s;
+            end
+        end
+        
         function [goodPointsEdge, densityMatrix] = GetDensityMatrix(conelocs, imageHeight, imageWidth, sourceImage)
         %   densityMatrix = GetDensityMatrix(conelocs, imageHeight, imageWidth)
         %   returns a density matrix.
