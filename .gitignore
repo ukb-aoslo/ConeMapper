@@ -32,6 +32,7 @@ Images and Results/JuliusMontages/Validation Images/
 Images and Results/JuliusMontages/Validation Manual Coord/
 Images and Results/JuliusMontages/imdb-JuliusMontages-ConeCNN.mat
 Images and Results/JuliusMontages/New folder/
+<<<<<<< HEAD
 Images and Results/JuliusMontages2/CNN Training-JuliusMontages2/
 Images and Results/JuliusMontages2/Probability Maps/
 Images and Results/JuliusMontages2/Training Images/
@@ -41,3 +42,8 @@ Images and Results/JuliusMontages2/Validation Images/
 Images and Results/JuliusMontages2/Validation Manual Coord/
 Images and Results/JuliusMontages2/imdb-JuliusMontages2-ConeCNN.mat
 Images and Results/JuliusMontages2/New folder/
+=======
+.DS_Store/
+testImages/
+.DS_Store
+>>>>>>> 9ac2aba (Add scale bar)

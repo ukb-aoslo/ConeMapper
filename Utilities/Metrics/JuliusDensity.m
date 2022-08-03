@@ -111,9 +111,11 @@ classdef JuliusDensity < handle
             matrixC(matrixC == 0) = allPolyConcateneted;
             matrixC = matrixC';
             
+            waitbarHandler = waitbar(0, 'Density calc...');
             % find neighbors for all cones
             neightborLists = cell(numberOfClosedPolygons, 1);
             for indCone = 1:numberOfClosedPolygons
+                waitbar(indCone / numberOfClosedPolygons, waitbarHandler);
                 if any(boundingPoly == indCone)
                     continue;
                 end
@@ -151,6 +153,7 @@ classdef JuliusDensity < handle
 %             imagesc(test');
             goodPointsEdge = [];
             
+            close(waitbarHandler);
             % to plot Voronoi
             
             % create an alphaShape
