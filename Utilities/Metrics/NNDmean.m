@@ -1,5 +1,5 @@
-classdef JuliusDensity < handle
-    %JuliusDensity calculates the cone density using average of the
+classdef NNDmean < handle
+    %NNDmean calculates the cone density using average of the
     %distances to the neighbor cones. Neighbor in terms of the Voronoi
     %diagram
     
@@ -30,8 +30,8 @@ classdef JuliusDensity < handle
     end
     
     methods
-        function obj = JuliusDensity(coneLocs, imageSize, sourceImage)
-            %JuliusDensity Construct an instance of this class
+        function obj = NNDmean(coneLocs, imageSize, sourceImage)
+            %NNDmean Construct an instance of this class
             if nargin > 0
                 obj.Vorocones = coneLocs;
             else
@@ -62,11 +62,11 @@ classdef JuliusDensity < handle
             end
             
             [obj.GoodPointsEdge, obj.DensityMatrix] = ...
-                JuliusDensity.GetDensityMatrix(obj.Vorocones, obj.ImageHeight, obj.ImageWidth, sourceImage);
+                NNDmean.GetDensityMatrix(obj.Vorocones, obj.ImageHeight, obj.ImageWidth, sourceImage);
             
-            [obj.PCD_cppa, obj.MinDensity_cppa, obj.PCD_loc] = JuliusDensity.GetMinMaxCPPA(obj.DensityMatrix);
+            [obj.PCD_cppa, obj.MinDensity_cppa, obj.PCD_loc] = NNDmean.GetMinMaxCPPA(obj.DensityMatrix);
             
-            [obj.CDC20_density, obj.CDC20_loc, obj.Stats2] = JuliusDensity.GetCDC(obj.PCD_cppa, obj.MinDensity_cppa, obj.DensityMatrix);
+            [obj.CDC20_density, obj.CDC20_loc, obj.Stats2] = NNDmean.GetCDC(obj.PCD_cppa, obj.MinDensity_cppa, obj.DensityMatrix);
         end
         
         function s = saveobj(obj)
@@ -95,7 +95,7 @@ classdef JuliusDensity < handle
     methods(Static)
         function obj = loadobj(s)
             if isstruct(s)
-                newObj = JuliusDensity(); 
+                newObj = NNDmean(); 
                 % for density map calculation
                 newObj.Vorocones = s.Vorocones;
                 newObj.ImageHeight = s.ImageHeight;

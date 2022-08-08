@@ -1,5 +1,5 @@
-classdef JennyDensity < handle
-    %JENNYDENSITY calculates the cone density using the Voronoi patch areas of
+classdef EuclidianNCones < handle
+    %EuclidianNCones calculates the cone density using the Voronoi patch areas of
     % the k nearest cones to each pixel by Jenny's algorithm
     
     % requested input data
@@ -32,8 +32,8 @@ classdef JennyDensity < handle
     end
     
     methods
-        function obj = JennyDensity(coneLocs, imageSize, numOfNerestCones, sourceImage)
-            %JENNYDENSITY Construct an instance of this class
+        function obj = EuclidianNCones(coneLocs, imageSize, numOfNerestCones, sourceImage)
+            %EuclidianNCones Construct an instance of this class
             if nargin > 0
                 obj.Vorocones = coneLocs;
             else
@@ -69,19 +69,19 @@ classdef JennyDensity < handle
                 error("Invalid JennyDinsity class. No data to calculate density");
             end
             
-            obj.ConeAreas = JennyDensity.GetConeAreas(obj.Vorocones);
+            obj.ConeAreas = EuclidianNCones.GetConeAreas(obj.Vorocones);
             
-            if nargin < 3
+            if nargin < 2
                 sourceImage = [];
             end
             
             [obj.GoodPointsMap, obj.GoodPointsEdge, obj.DensityMatrix] = ...
-                JennyDensity.GetDensityMatrix(obj.Vorocones, obj.ImageHeight, obj.ImageWidth, ...
+                EuclidianNCones.GetDensityMatrix(obj.Vorocones, obj.ImageHeight, obj.ImageWidth, ...
                 obj.NumOfNearestCones, obj.ConeAreas, sourceImage);
             
-            [obj.PCD_cppa, obj.MinDensity_cppa, obj.PCD_loc] = JennyDensity.GetMinMaxCPPA(obj.DensityMatrix);
+            [obj.PCD_cppa, obj.MinDensity_cppa, obj.PCD_loc] = EuclidianNCones.GetMinMaxCPPA(obj.DensityMatrix);
             
-            [obj.CDC20_density, obj.CDC20_loc, obj.Stats2] = JennyDensity.GetCDC(obj.PCD_cppa, obj.MinDensity_cppa, obj.DensityMatrix);
+            [obj.CDC20_density, obj.CDC20_loc, obj.Stats2] = EuclidianNCones.GetCDC(obj.PCD_cppa, obj.MinDensity_cppa, obj.DensityMatrix);
         end
         
         function s = saveobj(obj)
@@ -112,7 +112,7 @@ classdef JennyDensity < handle
     methods(Static)
         function obj = loadobj(s)
             if isstruct(s)
-                newObj = JennyDensity(); 
+                newObj = EuclidianNCones(); 
                 % for density map calculation
                 newObj.Vorocones = s.Vorocones;
                 newObj.ImageHeight = s.ImageHeight;
@@ -231,7 +231,7 @@ classdef JennyDensity < handle
             end                                            % end of coorY loop
 
             % get the edge of non aproximated area
-            goodPointsEdge = JennyDensity.FindMapEdgeByConelocs(goodPointsMap, conelocs);
+            goodPointsEdge = EuclidianNCones.FindMapEdgeByConelocs(goodPointsMap, conelocs);
             
             if ~isempty(sourceImage)
                 densityMatrix(sourceImage < 8) = NaN;
