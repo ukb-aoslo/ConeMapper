@@ -81,7 +81,7 @@ classdef EuclidianNCones < handle
             
             [obj.PCD_cppa, obj.MinDensity_cppa, obj.PCD_loc] = EuclidianNCones.GetMinMaxCPPA(obj.DensityMatrix);
             
-            [obj.CDC20_density, obj.CDC20_loc, obj.Stats2] = EuclidianNCones.GetCDC(obj.PCD_cppa, obj.MinDensity_cppa, obj.DensityMatrix);
+            [obj.CDC20_density, obj.CDC20_loc, obj.Stats2] = EuclidianNCones.GetCDC(obj.PCD_cppa, obj.DensityMatrix);
         end
         
         function s = saveobj(obj)
@@ -252,26 +252,54 @@ classdef EuclidianNCones < handle
             PCD_loc = [maxValueColIndex, maxValueRowIndex];
         end
 
-        function [CDC20_density, CDC20_loc, stats2] = GetCDC(PCD_cppa, minDensity_cppa, densityMatrix)
-        %   [CDC20_density, CDC20_loc, stats2] = GetCDC(PCD_cppa, minDensity_cppa, densityMatrix)
+        function [CDC20_density, CDC20_loc, stats2] = GetCDC(PCD_cppa, densityMatrix)
+        %   [CDC20_density, CDC20_loc, stats2] = GetCDC(PCD_cppa, densityMatrix)
         %   returns CDC density value, CDC location and raw measured statistic
         %   structure.
         %   - PCD_cppa - peak cone density.
-        %   - minDensity_cppa - minimum density value.
         %   - densityMatrix -  cone density matrix.
-            densRange = PCD_cppa - minDensity_cppa;
-            valuePct = zeros(9);
-            for perc = 1:9
-                valuePct(perc) = PCD_cppa - densRange * (perc / 10);
-            end
-
+            Perc20dens = 0.8 * PCD_cppa;
+            
             density_plot_norm = mat2gray(densityMatrix);
             L = zeros(size(densityMatrix));
-            L(densityMatrix > valuePct(2)) = ones;
+            L(densityMatrix > Perc20dens) = ones;
             stats2 = regionprops(L,density_plot_norm, 'WeightedCentroid');
 
             CDC20_loc = [round(stats2.WeightedCentroid(1)), round(stats2.WeightedCentroid(2))];
             CDC20_density = densityMatrix(round(CDC20_loc(2)), round(CDC20_loc(1)));
+        end
+        
+        function contourCoordinates = GetDensityPercentageContour(densityMatrix, PCD_cppa, percentage)
+        %   contourCoordinates = GetDensityPercentageContour(densityMatrix, PCD_cppa)
+        %   returns coordinates of the contour for given percentage from
+        %   PCD_cppa value.
+        %    - densityMatrix -  cone density matrix.
+        %    - PCD_cppa - peak cone density.
+        %    - percentage - percent starting from PCD_cppa in 0..1.
+        %
+        %    - contourCoordinates - coordinates of the contour in the same
+        %    format as output of matlab "contour" function.
+        %    https://nl.mathworks.com/help/matlab/ref/contour.html#f19-795863_sep_mw_d9e727e2-79e4-4cf6-bfaf-431a164d82b0
+        %
+        %   How to extract all contours:
+        %   index = 1;
+        %   contours = {};
+        %   while index < length(contourCoordinates)
+        %       numOfPoints = contourCoordinates(2, index);
+        %       contours{end + 1} = contourCoordinates(index+1:index + numOfPoints, :)';
+        %       index = index + numOfPoints + 1;
+        %   end
+        %
+        %   Each cell in contours will be 2 column array. Each row will be
+        %   point of the polygon edge.
+        
+            Perc20dens = (1 - percentage) * PCD_cppa;
+            
+            tempFig = figure;
+            tempAx = axes;
+            % make contour
+            contourCoordinates = contour(tempAx, densityMatrix, [Perc20dens, Perc20dens]);
+            delete(tempFig);
         end
         
         function boundaryConelocs = FindMapEdgeByConelocs(BWMap, conelocs)
