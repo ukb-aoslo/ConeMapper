@@ -292,7 +292,10 @@ classdef EuclidianNCones < handle
         %
         %   Each cell in contours will be 2 column array. Each row will be
         %   point of the polygon edge.
-        
+            if percentage > 1 || percentage < 0
+               error("percentage MUST be between 0..1" );
+            end
+            
             Perc20dens = (1 - percentage) * PCD_cppa;
             
             tempFig = figure;
