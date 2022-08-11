@@ -13,6 +13,7 @@ classdef NNDmean < handle
         ImageHeight = 0;
         ImageWidth = 0;
         DensityMatrix = [];
+        AvgDistancesToNeighbors = [];
         
         % for PCD
         PCD_cppa = [];
@@ -30,7 +31,7 @@ classdef NNDmean < handle
     end
     
     methods
-        function obj = NNDmean(coneLocs, imageSize, sourceImage)
+        function obj = NNDmean(coneLocs, imageSize)
             %NNDmean Construct an instance of this class
             if nargin > 0
                 obj.Vorocones = coneLocs;
@@ -46,23 +47,16 @@ classdef NNDmean < handle
                 obj.ImageWidth = max(coneLocs(:, 1));
             end
             
-            if nargin < 3
-                sourceImage = [];
-            end
-            
-            Recalculate(obj, sourceImage);
+            Recalculate(obj);
         end
         
-        function Recalculate(obj, sourceImage)
+        function Recalculate(obj)
         %   Recalculate(obj, sourceImage) 
         %   recalculates all the data for density map.
-        %   - obj - the current class object.            
-            if nargin < 3
-                sourceImage = [];
-            end
+        %   - obj - the current class object.
             
-            [obj.GoodPointsEdge, obj.DensityMatrix] = ...
-                NNDmean.GetDensityMatrix(obj.Vorocones, obj.ImageHeight, obj.ImageWidth, sourceImage);
+            [obj.GoodPointsEdge, obj.DensityMatrix, obj.AvgDistancesToNeighbors] = ...
+                NNDmean.GetDensityMatrix(obj.Vorocones, obj.ImageHeight, obj.ImageWidth);
             
             [obj.PCD_cppa, obj.MinDensity_cppa, obj.PCD_loc] = NNDmean.GetMinMaxCPPA(obj.DensityMatrix);
             
@@ -75,6 +69,7 @@ classdef NNDmean < handle
             s.ImageHeight = obj.ImageHeight;
             s.ImageWidth = obj.ImageWidth;
             s.DensityMatrix = obj.DensityMatrix;
+            s.AvgDistancesToNeighbors = obj.AvgDistancesToNeighbors;
 
             % for PCD
             s.PCD_cppa = obj.PCD_cppa;
@@ -101,6 +96,9 @@ classdef NNDmean < handle
                 newObj.ImageHeight = s.ImageHeight;
                 newObj.ImageWidth = s.ImageWidth;
                 newObj.DensityMatrix = s.DensityMatrix;
+                if isfield(s,'AvgDistancesToNeighbors')
+                    newObj.AvgDistancesToNeighbors = s.AvgDistancesToNeighbors;
+                end
 
                 % for PCD
                 newObj.PCD_cppa = s.PCD_cppa;
@@ -121,7 +119,7 @@ classdef NNDmean < handle
             end
         end
         
-        function [goodPointsEdge, densityMatrix] = GetDensityMatrix(conelocs, imageHeight, imageWidth, sourceImage)
+        function [goodPointsEdge, densityMatrix, avgDistancesToNeighbors] = GetDensityMatrix(conelocs, imageHeight, imageWidth)
         %   densityMatrix = GetDensityMatrix(conelocs, imageHeight, imageWidth)
         %   returns a density matrix.
         %   - conelocs - locations of cones.
@@ -191,36 +189,14 @@ classdef NNDmean < handle
             end
             
             % interpolate the result to get a map
-            [X,Y] = meshgrid(1:imageWidth, 1:imageHeight);
-            X = reshape(X,[],1);
-            Y = reshape(Y,[],1);
-            Vq = griddata(floor(vorocones(:, 1)), floor(vorocones(:, 2)), avgDistancesToNeighbors, X, Y, 'cubic');
-            Vq = reshape(Vq, imageHeight, imageWidth);
-            densityMatrix = 1./Vq;
-            
-%             how to filter the result
-            densityMatrix = sgolayfilt(1./Vq, 3, 11); 
-            densityMatrix = sgolayfilt(densityMatrix' , 3, 11)'; 
-%             imagesc(test');
+            densityMatrix = NNDmean.InterpolateDensityMap(conelocs, avgDistancesToNeighbors, 'nearest', [imageHeight, imageWidth]);
+            densityMatrix = imgaussfilt(densityMatrix, 15);
+            % invert matrix to represent it in the same way as other
+            % densities
+            densityMatrix = 1./densityMatrix;
             goodPointsEdge = [];
             
             close(waitbarHandler);
-            % to plot Voronoi
-            
-            % create an alphaShape
-%             voronoiAlphaShape = alphaShape(vorocones(:, 1), vorocones(:, 2));
-%             voronoiAlphaShape.Alpha = 2 * voronoiAlphaShape.Alpha;
-%             V(V(:, 1) == Inf | V(:, 2) == Inf, :) = -1;
-%             % fill with NaN all verticies which is out of
-%             % AlphaShape
-%             tf = inShape(voronoiAlphaShape, V(:,1), V(:, 2));
-%             V(~tf, 1) = NaN;
-%             V(~tf, 2) = NaN;
-%             
-%             patch('Faces',matrixC,'Vertices',V,'FaceVertexCData',avgDistancesToNeighbors,'FaceColor','flat');
-%             colorbar;
-%             oldcmap = colormap;
-%             colormap( flipud(oldcmap) );
         end
 
         function [PCD_cppa, minDensity_cppa, PCD_loc] = GetMinMaxCPPA(densityMatrix)
@@ -282,6 +258,29 @@ classdef NNDmean < handle
             % find a boundary of the set
             boundingPoly = boundary(row, col);
             boundaryConelocs = [row(boundingPoly), col(boundingPoly)];
+        end
+        
+        function map = InterpolateDensityMap(conelocs, baseDensityValues, methodInterpolation, imageSize)
+        % map = InterpolateDensityMap(conelocs, baseDensityValues, methodInterpolation, imageSize)
+        % interpolates whole density map by values, calculated in
+        % conelocations.
+        % - conelocs - cone locations.
+        % - baseDensityValues - density values corresponding to conelocs.
+        % - methodInterpolation - method for scatteredInterpolant. Use 'nearest'.
+        % - imageSize - size of original image as [rows, cols].
+            minxc = ceil(min(conelocs(:,1)));
+            maxxc = floor(max(conelocs(:,1)));
+            maxyc = floor(max(conelocs(:,2)));
+            minyc = ceil(min(conelocs(:,2)));
+            % use the scatteredInterpolant to interpolate scattered data
+            cdip = scatteredInterpolant(conelocs,baseDensityValues,methodInterpolation);
+            % interpolate within the xaxv, yaxv area
+            [xaxv, yaxv] = meshgrid(minxc:maxxc, minyc:maxyc);
+            % execute interpolation
+            cy = cdip(xaxv,yaxv);
+            map = NaN(imageSize(1), imageSize(2));
+            % fill data into a l matrix
+            map(minyc:maxyc,minxc:maxxc) = cy;
         end
     end
 end
