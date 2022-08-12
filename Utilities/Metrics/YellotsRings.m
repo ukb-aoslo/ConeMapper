@@ -7,6 +7,11 @@ classdef YellotsRings < handle
         SourceImage = [];
         ROI_size = 200;
         DensityMatrix = [];
+        avgPixelSpac = [];
+        interpedSpacMap = [];
+        interpedConfMap = [];
+        sumMap = [];
+        imBox = [];
         
         % for PCD
         PCD_cppa = [];
@@ -36,7 +41,9 @@ classdef YellotsRings < handle
         %   recalculates all the data for density map.
         %   - obj - the current class object.
             
-            [obj.DensityMatrix] = YellotsRings.GetDensityMatrix(obj.SourceImage);
+            [obj.DensityMatrix, obj.avgPixelSpac, obj.interpedSpacMap, ...
+                obj.interpedConfMap, obj.sumMap, obj.imBox] = ...
+                YellotsRings.GetDensityMatrix(obj.SourceImage, obj.ROI_size);
             
             [obj.PCD_cppa, obj.MinDensity_cppa, obj.PCD_loc] = YellotsRings.GetMinMaxCPPA(obj.DensityMatrix);
             
@@ -47,6 +54,11 @@ classdef YellotsRings < handle
             % for density map calculation
             s.SourceImage = obj.SourceImage;
             s.DensityMatrix = obj.DensityMatrix;
+            s.avgPixelSpac = obj.avgPixelSpac;
+            s.interpedSpacMap = obj.interpedSpacMap;
+            s.interpedConfMap = obj.interpedConfMap;
+            s.sumMap = obj.sumMap;
+            s.imBox = obj.imBox;
 
             % for PCD
             s.PCD_cppa = obj.PCD_cppa;
@@ -71,6 +83,11 @@ classdef YellotsRings < handle
                 % for density map calculation
                 newObj.SourceImage = s.SourceImage;
                 newObj.DensityMatrix = s.DensityMatrix;
+                newObj.avgPixelSpac = s.avgPixelSpac;
+                newObj.interpedSpacMap = s.interpedSpacMap;
+                newObj.interpedConfMap = s.interpedConfMap;
+                newObj.sumMap = s.sumMap;
+                newObj.imBox = s.imBox;
                 
                 % for PCD
                 newObj.PCD_cppa = s.PCD_cppa;
@@ -91,12 +108,17 @@ classdef YellotsRings < handle
             end
         end
         
-        function [densityMatrix] = GetDensityMatrix(sourceImage, roiSize)
+        function [densityMatrix, avgPixelSpac, interpedSpacMap, interpedConfMap, sumMap, imBox] = ...
+                GetDensityMatrix(sourceImage, roiSize)
         %   densityMatrix = GetDensityMatrix(sourceImage)
         %   returns a density matrix.
         %   - sourceImage - the source image of retina.
         
-        [~, im_spac_map, im_err_map, im_sum_map, imbox] = fit_fourier_spacing(sourceImage, roiSize);
+            [avgPixelSpac, interpedSpacMap, interpedConfMap, sumMap, imBox] = ...
+                FitFourierSpacing(sourceImage, roiSize);
+            
+            densityMatrix = interpedConfMap ./ interpedSpacMap;
+            densityMatrix = imgaussfilt(densityMatrix, 15);
         end
         
         function [PCD_cppa, minDensity_cppa, PCD_loc] = GetMinMaxCPPA(densityMatrix)

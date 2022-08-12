@@ -1,5 +1,7 @@
 function [avgPixelSpac, interpedSpacMap, interpedConfMap, sumMap, imBox] = FitFourierSpacing(sourceImage, roiSize)
 %FITFOURIERSPACING Summary of this function goes here
+%   Robert Cooper
+%
 % - sourceImage - The image that will be analyzed. The only requirement 
 %   is that it is a 2d, grayscale (1 channel) image.
 % - roiSize - The side length (in pixels) of a sliding roi window- 
@@ -13,7 +15,6 @@ function [avgPixelSpac, interpedSpacMap, interpedConfMap, sumMap, imBox] = FitFo
 % - **interped_conf_map**: The confidence map of the input image.
 % - **sum_map**: The map corresponding to the amount of ROI overlap across the output map.
 % - **imbox**: The bounding region of valid (nonzero, NaN, or Inf) pixels.
-
 
     superSampling = false;
     rowOrCell = 'cell';
@@ -73,12 +74,12 @@ function [avgPixelSpac, interpedSpacMap, interpedConfMap, sumMap, imBox] = FitFo
         end 
     end
     
-    
-%     numind = size(regionsOfInterest, 1) * size(regionsOfInterest, 2);
     pixelSpac = nan(size(regionsOfInterest));
     confidence = nan(size(regionsOfInterest));
     
-    for indR = 1:length(pixelSpac(:))
+    waitbarHandle = waitbar(0, 'Fourier fitting ...');
+    lengthPixelSpac = length(pixelSpac(:));
+    for indR = 1:lengthPixelSpac
         if ~isempty(regionsOfInterest{indR})    
             
             % We don't want this run on massive images (RAM sink)
@@ -111,7 +112,6 @@ function [avgPixelSpac, interpedSpacMap, interpedConfMap, sumMap, imBox] = FitFo
             leftRightN = [46:135, 226:315] / thetaSampling;
             upperLowerNFourierProfile = mean(polarRoi(upperLowerN, :));
             leftRightNFourierProfile = mean(polarRoi(leftRightN, :));
-%             fullFourierProfile = mean(polarRoi);
 
             if strcmp(rowOrCell, 'cell') && ~all(isinf(leftRightNFourierProfile)) && ~all(isnan(leftRightNFourierProfile))
                 [pixelSpac(indR), ~, confidence(indR)] = fourierFit(leftRightNFourierProfile, [], false);
@@ -123,7 +123,10 @@ function [avgPixelSpac, interpedSpacMap, interpedConfMap, sumMap, imBox] = FitFo
                 pixelSpac(indR) = NaN;
             end
         end
+        
+        waitbar(indR / lengthPixelSpac, waitbarHandle);
     end
+    close(waitbarHandle);
     
     avgPixelSpac = mean(pixelSpac(~isnan(pixelSpac)));
     interpedSpacMap = avgPixelSpac;
@@ -183,4 +186,3 @@ function [avgPixelSpac, interpedSpacMap, interpedConfMap, sumMap, imBox] = FitFo
         end
     end
 end
-
