@@ -31,7 +31,11 @@ classdef YellotsRings < handle
     methods
         function obj = YellotsRings(sourceImage)
             %YELLOTSRINGS Construct an instance of this class
-            obj.SourceImage = sourceImage;
+            if nargin > 0
+              	obj.SourceImage = sourceImage;
+            else
+                return;
+            end
             
             Recalculate(obj);
         end
