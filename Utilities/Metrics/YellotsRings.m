@@ -140,20 +140,20 @@ classdef YellotsRings < handle
                                                                            imBox(1):imBox(1)+imBox(3) ) + interpedConfMap;   
             end
             
-            blendedImage = blendedImage ./ blendedSumMap;
+            blendedImage = blendedImage ./ blendedConfMap;
             blendedConfMap = blendedConfMap ./ blendedSumMap;
                         
-%             % arcmins per pixel
-%             scaling = 0.1;
-%             % To density, assuming perfect packing
-%             densityMatrix = sqrt(3)./ (2*(blendedImage * scaling).^2);
-% % 
+            % arcmins per pixel
+            scaling = 0.1;
+            % To density, assuming perfect packing
+            densityMatrix = sqrt(3)./ (2*(blendedImage * scaling).^2);
+
 % %             if strcmp(unit,'microns (mm density)')
 % %                 densityMatrix = (1000^2).*densityMatrix;
 % %             end
-%     
+
             % TODO: check this step!!!!!!!
-            densityMatrix = blendedConfMap ./ blendedImage;
+%             densityMatrix = blendedConfMap ./ blendedImage;
             densityMatrix = imgaussfilt(densityMatrix, 8);
         end
         
