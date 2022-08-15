@@ -112,7 +112,7 @@ classdef YellotsRings < handle
             end
         end
         
-        function [densityMatrix, avgPixelSpac, interpedSpacMap, interpedConfMap, sumMap, imBox] = ...
+        function [densityMatrix, avgPixelSpac, blendedImage, blendedConfMap, blendedSumMap, imBox] = ...
                 GetDensityMatrix(sourceImage, roiSize)
         %   densityMatrix = GetDensityMatrix(sourceImage)
         %   returns a density matrix.
@@ -121,8 +121,40 @@ classdef YellotsRings < handle
             [avgPixelSpac, interpedSpacMap, interpedConfMap, sumMap, imBox] = ...
                 FitFourierSpacing(sourceImage, roiSize);
             
-            densityMatrix = interpedConfMap ./ interpedSpacMap;
-            densityMatrix = imgaussfilt(densityMatrix, 15);
+            [rows, cols, ~] = size(sourceImage);
+            blendedImage = zeros(rows, cols);
+            blendedConfMap = zeros(rows, cols);
+            blendedSumMap = zeros(rows, cols);
+            
+            if ~isempty(imBox)
+                blendedImage( imBox(2):imBox(2)+imBox(4),...
+                           imBox(1):imBox(1)+imBox(3) ) = blendedImage( imBox(2):imBox(2)+imBox(4),...
+                                                                           imBox(1):imBox(1)+imBox(3) ) + interpedSpacMap;
+
+                blendedSumMap( imBox(2):imBox(2)+imBox(4),...
+                         imBox(1):imBox(1)+imBox(3) ) = blendedSumMap( imBox(2):imBox(2)+imBox(4),...
+                                                                       imBox(1):imBox(1)+imBox(3) ) + sumMap;
+
+                blendedConfMap( imBox(2):imBox(2)+imBox(4),...
+                           imBox(1):imBox(1)+imBox(3) ) = blendedConfMap( imBox(2):imBox(2)+imBox(4),...
+                                                                           imBox(1):imBox(1)+imBox(3) ) + interpedConfMap;   
+            end
+            
+            blendedImage = blendedImage ./ blendedSumMap;
+            blendedConfMap = blendedConfMap ./ blendedSumMap;
+                        
+%             % arcmins per pixel
+%             scaling = 0.1;
+%             % To density, assuming perfect packing
+%             densityMatrix = sqrt(3)./ (2*(blendedImage * scaling).^2);
+% % 
+% %             if strcmp(unit,'microns (mm density)')
+% %                 densityMatrix = (1000^2).*densityMatrix;
+% %             end
+%     
+            % TODO: check this step!!!!!!!
+            densityMatrix = blendedConfMap ./ blendedImage;
+            densityMatrix = imgaussfilt(densityMatrix, 8);
         end
         
         function [PCD_cppa, minDensity_cppa, PCD_loc] = GetMinMaxCPPA(densityMatrix)
