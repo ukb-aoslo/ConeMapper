@@ -117,6 +117,7 @@ classdef YellotsRings < handle
         %   densityMatrix = GetDensityMatrix(sourceImage)
         %   returns a density matrix.
         %   - sourceImage - the source image of retina.
+        %   - roiSize - size of the scaning window(?)
         
             [avgPixelSpac, interpedSpacMap, interpedConfMap, sumMap, imBox] = ...
                 FitFourierSpacing(sourceImage, roiSize);
