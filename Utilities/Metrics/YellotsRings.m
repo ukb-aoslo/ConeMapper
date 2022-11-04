@@ -13,7 +13,6 @@ classdef YellotsRings < handle
         interpedConfMap = [];
         sumMap = [];
         imBox = [];
-        pixelPerDegree = 600;
         
         % for PCD
         PCD_cppa = [];
@@ -49,7 +48,7 @@ classdef YellotsRings < handle
             
             [obj.DensityMatrix, obj.DensityMatrixBeforeSmoothing, obj.avgPixelSpac, obj.interpedSpacMap, ...
                 obj.interpedConfMap, obj.sumMap, obj.imBox] = ...
-                YellotsRings.GetDensityMatrix(obj.SourceImage, obj.ROI_size, obj.pixelPerDegree);
+                YellotsRings.GetDensityMatrix(obj.SourceImage, obj.ROI_size);
             
             [obj.PCD_cppa, obj.MinDensity_cppa, obj.PCD_loc] = YellotsRings.GetMinMaxCPPA(obj.DensityMatrix);
             
@@ -121,8 +120,8 @@ classdef YellotsRings < handle
         end
         
         function [densityMatrix, densityMatrixBeforeSmoothing, avgPixelSpac, blendedImage, blendedConfMap, blendedSumMap, imBox] = ...
-                GetDensityMatrix(sourceImage, roiSize, pixelsPerDegree)
-        %   densityMatrix = GetDensityMatrix(sourceImage)
+                GetDensityMatrix(sourceImage, roiSize)
+        %   densityMatrix = GetDensityMatrix(sourceImage, roiSize)
         %   returns a density matrix.
         %   - sourceImage - the source image of retina.
         %   - roiSize - size of the scaning window(?)
@@ -151,11 +150,9 @@ classdef YellotsRings < handle
             
             blendedImage = blendedImage ./ blendedConfMap;
             blendedConfMap = blendedConfMap ./ blendedSumMap;
-                  
-            % microns per degree
-            scaling = YellotsRings.GetScalingInMicrons(pixelsPerDegree);
+            
             % To density, assuming perfect packing
-            densityMatrixBeforeSmoothing = sqrt(3)./ (2*(blendedImage * scaling).^2);
+            densityMatrixBeforeSmoothing = sqrt(3)./ (2*(blendedImage).^2);
 
             densityMatrix = imgaussfilt(densityMatrixBeforeSmoothing, 8);
         end
