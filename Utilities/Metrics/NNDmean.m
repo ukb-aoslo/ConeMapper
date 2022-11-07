@@ -13,6 +13,8 @@ classdef NNDmean < handle
         ImageHeight = 0;
         ImageWidth = 0;
         DensityMatrix = [];
+        DeinstyMatrixConesPerRadius = [];
+        DeinstyMatrixConesPerAreaNotFiltered = [];
         AvgDistancesToNeighbors = [];
         
         % for PCD
@@ -24,10 +26,6 @@ classdef NNDmean < handle
         CDC20_density = 0;
         CDC20_loc = [];
         Stats2 = [];
-        
-        % points which represent a polygon inside of which we have non
-        % aproximated map
-        GoodPointsEdge = [];
     end
     
     methods
@@ -55,7 +53,7 @@ classdef NNDmean < handle
         %   recalculates all the data for density map.
         %   - obj - the current class object.
             
-            [obj.DensityMatrix, obj.AvgDistancesToNeighbors] = ...
+            [obj.DeinstyMatrixConesPerRadius, obj.DeinstyMatrixConesPerAreaNotFiltered, obj.DensityMatrix, obj.AvgDistancesToNeighbors] = ...
                 NNDmean.GetDensityMatrix(obj.Vorocones, obj.ImageHeight, obj.ImageWidth);
             
             [obj.PCD_cppa, obj.MinDensity_cppa, obj.PCD_loc] = NNDmean.GetMinMaxCPPA(obj.DensityMatrix);
@@ -69,6 +67,8 @@ classdef NNDmean < handle
             s.ImageHeight = obj.ImageHeight;
             s.ImageWidth = obj.ImageWidth;
             s.DensityMatrix = obj.DensityMatrix;
+            s.DeinstyMatrixConesPerRadius = obj.DeinstyMatrixConesPerRadius;
+            s.DeinstyMatrixConesPerAreaNotFiltered = obj.DeinstyMatrixConesPerAreaNotFiltered;
             s.AvgDistancesToNeighbors = obj.AvgDistancesToNeighbors;
 
             % for PCD
@@ -80,10 +80,6 @@ classdef NNDmean < handle
             s.CDC20_density = obj.CDC20_density;
             s.CDC20_loc = obj.CDC20_loc;
             s.Stats2 = obj.Stats2;
-
-            % points which represent a polygon inside of which we have non
-            % aproximated map
-            s.GoodPointsEdge = obj.GoodPointsEdge;
         end
     end
     
@@ -96,6 +92,13 @@ classdef NNDmean < handle
                 newObj.ImageHeight = s.ImageHeight;
                 newObj.ImageWidth = s.ImageWidth;
                 newObj.DensityMatrix = s.DensityMatrix;
+
+                if isfield(s,'DeinstyMatrixConesPerRadius')
+                    newObj.DeinstyMatrixConesPerRadius = s.DeinstyMatrixConesPerRadius;
+                end
+                if isfield(s,'DeinstyMatrixConesPerAreaNotFiltered')
+                    newObj.DeinstyMatrixConesPerAreaNotFiltered = s.DeinstyMatrixConesPerAreaNotFiltered;
+                end
                 if isfield(s,'AvgDistancesToNeighbors')
                     newObj.AvgDistancesToNeighbors = s.AvgDistancesToNeighbors;
                 end
@@ -110,16 +113,13 @@ classdef NNDmean < handle
                 newObj.CDC20_loc = s.CDC20_loc;
                 newObj.Stats2 = s.Stats2;
 
-                % points which represent a polygon inside of which we have non
-                % aproximated map
-                newObj.GoodPointsEdge = s.GoodPointsEdge;
                 obj = newObj;
             else
                 obj = s;
             end
         end
         
-        function [densityMatrix, avgDistancesToNeighbors] = GetDensityMatrix(conelocs, imageHeight, imageWidth)
+        function [densityMatrixRadial, densityMatrixArea, densityMatrixAreaFiltered, avgDistancesToNeighbors] = GetDensityMatrix(conelocs, imageHeight, imageWidth)
         %   densityMatrix = GetDensityMatrix(conelocs, imageHeight, imageWidth)
         %   returns a density matrix.
         %   - conelocs - locations of cones.
@@ -140,7 +140,7 @@ classdef NNDmean < handle
             vorocones = conelocs(:, 1:2);
             voronoiDelaunayTriang = delaunayTriangulation(vorocones);
             % V - verticies of polygons, C - the polygons constructed by V
-            [V,C] = voronoiDiagram(voronoiDelaunayTriang);
+            [~, C] = voronoiDiagram(voronoiDelaunayTriang);
             
             numberOfClosedPolygons = length(C);
             % Create a matrix from list of Verice inedexes (empty values filled by NaN)
@@ -189,11 +189,13 @@ classdef NNDmean < handle
             end
             
             % interpolate the result to get a map
-            densityMatrix = NNDmean.InterpolateDensityMap(conelocs, avgDistancesToNeighbors, 'nearest', [imageHeight, imageWidth]);
-            densityMatrix = imgaussfilt(densityMatrix, 15);
+            densityMatrixRadial = NNDmean.InterpolateDensityMap(conelocs, avgDistancesToNeighbors, 'nearest', [imageHeight, imageWidth]);
+            
+            densityMatrixRadial = 1./densityMatrixRadial;
+            densityMatrixArea = (densityMatrixRadial ./ 2) .^2 .* pi;
+            densityMatrixAreaFiltered = imgaussfilt(densityMatrixArea, 8);
             % invert matrix to represent it in the same way as other
             % densities
-            densityMatrix = 1./densityMatrix;
             
             close(waitbarHandler);
         end
