@@ -12,9 +12,20 @@ classdef NNDmean < handle
         Vorocones = [];
         ImageHeight = 0;
         ImageWidth = 0;
+        % cones per circle area after smoothing filter (gauss)
         DensityMatrix = [];
+        % cones per "cone diameter"
         DeinstyMatrixConesPerRadius = [];
+        % cones per circle area (pi * (("cone diameter") / 2)^ 2)
         DeinstyMatrixConesPerAreaNotFiltered = [];
+        
+        % distance between 2 cones in pixels
+        % data points correspond to set of cones:
+        %   conelocs = unique(hobj.Vorocones, 'rows', 'stable');
+        %   conelocs(conelocs(:,1) < 0, :) = [];
+        %   conelocs(conelocs(:,1) > imageWidth, :) = [];
+        %   conelocs(conelocs(:,2) < 0, :) = [];
+        %   conelocs(conelocs(:,2) > imageHeight, :) = [];
         AvgDistancesToNeighbors = [];
         
         % for PCD
