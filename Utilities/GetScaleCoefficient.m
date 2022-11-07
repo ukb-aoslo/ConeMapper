@@ -12,7 +12,7 @@ function scaleCoefficient = GetScaleCoefficient(unit, pixelsPerDegree)
     % 1 degree = 60 arcmin;
     % 1 arcmin = 60 arcsec;
     switch unit
-        case 'pixel'
+        case {'pixel', 'px', ''}
             scaleCoefficient = 1;
 
         case 'arcsec'
@@ -21,7 +21,7 @@ function scaleCoefficient = GetScaleCoefficient(unit, pixelsPerDegree)
         case 'arcmin'
             scaleCoefficient = 60 / pixelsPerDegree;
 
-        case 'degree'
+        case {'degree', 'deg'}
             scaleCoefficient = 1 / pixelsPerDegree;
 
         otherwise

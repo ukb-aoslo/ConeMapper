@@ -43,6 +43,8 @@ classdef scalebar <handle
 		hTextY_Pos            %SCALE-Y-LABEL-POSITION
 		hTextY_Rot=90         %SCALE-Y-LABEL-ROTATION
         Visible = 'on';
+
+        PixelsPerDergree = 600;
 	end
 	methods
 		function hobj = scalebar(varargin)                        
@@ -234,13 +236,18 @@ classdef scalebar <handle
 		function SetXUnit(hobj,  varargin)
             value = hobj.XUnit;
             if ishandle(hobj.hTextX)
-                set(hobj.hTextX, 'String', [num2str(hobj.XLen),' ',value]);
+                scaleCoefficient = GetScaleCoefficient(value, hobj.PixelsPerDergree);
+                set(hobj.hTextX, 'String', ...
+                    sprintf(['%8.4f ', value], hobj.XLen * scaleCoefficient));
+
             end
 		end
 		function SetYUnit(hobj,  varargin)
             value = hobj.YUnit;
             if ishandle(hobj.hTextY)
-                set(hobj.hTextY, 'String',  [num2str(hobj.YLen),' ',value]);
+                scaleCoefficient = GetScaleCoefficient(value, hobj.PixelsPerDergree);
+                set(hobj.hTextY, 'String',  ...
+                    sprintf(['%8.4f ', value], hobj.YLen * scaleCoefficient));
             end
         end
 	end
