@@ -238,7 +238,7 @@ classdef scalebar <handle
             if ishandle(hobj.hTextX)
                 scaleCoefficient = GetScaleCoefficient(value, hobj.PixelsPerDergree);
                 set(hobj.hTextX, 'String', ...
-                    sprintf(['%8.4f ', value], hobj.XLen * scaleCoefficient));
+                    sprintf([GetFormatStringByUnit(value), value], hobj.XLen * scaleCoefficient));
 
             end
 		end
@@ -247,7 +247,7 @@ classdef scalebar <handle
             if ishandle(hobj.hTextY)
                 scaleCoefficient = GetScaleCoefficient(value, hobj.PixelsPerDergree);
                 set(hobj.hTextY, 'String',  ...
-                    sprintf(['%8.4f ', value], hobj.YLen * scaleCoefficient));
+                    sprintf([GetFormatStringByUnit(value), value], hobj.YLen * scaleCoefficient));
             end
         end
 	end
@@ -285,9 +285,26 @@ classdef scalebar <handle
 	end
 
 end
+
 function numout = nearto(numin)
     order = 10^( floor(log10(numin)) );
     scale = [1 ,2 ,5];
     ind = find(scale<= numin/order,1,'last');
     numout = scale(ind) * order;
+end
+
+function formatString = GetFormatStringByUnit(unit)
+    switch unit
+        case {'pixel', 'px', '', 'arcsec'}
+            formatString = '%5.0f ';
+
+        case 'arcmin'
+            formatString = '%5.2f ';
+
+        case {'degree', 'deg'}
+            formatString = '%6.4f ';
+
+        otherwise
+            error(["Unknown unit: ", unit]);
+    end
 end
