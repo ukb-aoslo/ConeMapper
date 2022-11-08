@@ -1,4 +1,4 @@
-classdef YellotsRings < handle
+classdef YellotsRings < DensityMetricBase
     %YELLOTSRINGS calculates the cone density using DFT and Yellots Rings.
     %For more info, read: https://tvst.arvojournals.org/article.aspx?articleid=2753106
     %Original code: https://github.com/OCVL/Full-Auto-Density-Mapping
@@ -6,7 +6,6 @@ classdef YellotsRings < handle
     properties
         SourceImage = [];
         ROI_size = 200;
-        DensityMatrix = [];
         DensityMatrixBeforeSmoothing = [];
         avgPixelSpac = [];
         interpedSpacMap = [];
@@ -14,19 +13,20 @@ classdef YellotsRings < handle
         sumMap = [];
         imBox = [];
         
+        % Fields defined in base class
+%         ImageHeight = 0;
+%         ImageWidth = 0;
+%         DensityMatrix = [];
+        
         % for PCD
-        PCD_cppa = [];
-        MinDensity_cppa = 0;
-        PCD_loc = [];
+%         PCD_cppa = [];
+%         MinDensity_cppa = 0;
+%         PCD_loc = [];
         
         % for CDC
-        CDC20_density = 0;
-        CDC20_loc = [];
-        Stats2 = [];
-        
-        % points which represent a polygon inside of which we have non
-        % aproximated map
-        GoodPointsEdge = [];
+%         CDC20_density = 0;
+%         CDC20_loc = [];
+%         Stats2 = [];
     end
     
     methods
@@ -74,10 +74,6 @@ classdef YellotsRings < handle
             s.CDC20_density = obj.CDC20_density;
             s.CDC20_loc = obj.CDC20_loc;
             s.Stats2 = obj.Stats2;
-
-            % points which represent a polygon inside of which we have non
-            % aproximated map
-            s.GoodPointsEdge = obj.GoodPointsEdge;
         end
     end
     
@@ -104,19 +100,10 @@ classdef YellotsRings < handle
                 newObj.CDC20_loc = s.CDC20_loc;
                 newObj.Stats2 = s.Stats2;
 
-                % points which represent a polygon inside of which we have non
-                % aproximated map
-                newObj.GoodPointsEdge = s.GoodPointsEdge;
                 obj = newObj;
             else
                 obj = s;
             end
-        end
-        
-        function scalingValue = GetScalingInMicrons(pixelsPerDegree)
-            % 60 arcmin in 1 degree
-            arcminPerDegree = 60;
-            scalingValue = arcminPerDegree / pixelsPerDegree;
         end
         
         function [densityMatrix, densityMatrixBeforeSmoothing, avgPixelSpac, blendedImage, blendedConfMap, blendedSumMap, imBox] = ...
@@ -124,7 +111,17 @@ classdef YellotsRings < handle
         %   densityMatrix = GetDensityMatrix(sourceImage, roiSize)
         %   returns a density matrix.
         %   - sourceImage - the source image of retina.
-        %   - roiSize - size of the scaning window(?)
+        %   - roiSize - size of the scaning window of the algorithm(?)
+        %
+        % Returns:
+        %   - densityMatrix - the density matrix smoothed by gauss filter.
+        %   - densityMatrixBeforeSmoothing - the density matrix before smoothing.
+        %   - avgPixelSpac - the average spacing of the image.
+        %   - blendedImage - the spacing map of the input image (in pixel spacing).
+        %   - blendedConfMap - the confidence map. Mask for density map, which
+        %   represents the confidence of the calculated values in density map.
+        %   - blendedSumMap - the map corresponding to the amount of ROI overlap across the output map.
+        %   - imBox - the bounding region of valid (nonzero, NaN, or Inf) pixels.
         
             [avgPixelSpac, interpedSpacMap, interpedConfMap, sumMap, imBox] = ...
                 FitFourierSpacing(sourceImage, roiSize);
@@ -159,8 +156,13 @@ classdef YellotsRings < handle
         
         function [PCD_cppa, minDensity_cppa, PCD_loc] = GetMinMaxCPPA(densityMatrix)
         %   [PCD_cppa, minDensity_cppa, PCD_loc] = GetMinMaxCPPA(densityMatrix)
-        %   returns peak cone density (PCD), minimum density value, and coordinates of
-        %   PCD in the density matrix
+        %   returns peak cone density and the supplementary information
+        %
+        %    - densityMatrix - the density matrix
+        % Returns:
+        %    - PCD_cppa - peak cone density (PCD) value
+        %    - minDensity_cppa - minimum density value
+        %    - PCD_loc - coordinates of PCD in the density matrix
 
             minDensity_cppa = min(densityMatrix(:));
 
@@ -172,10 +174,15 @@ classdef YellotsRings < handle
 
         function [CDC20_density, CDC20_loc, stats2] = GetCDC(PCD_cppa, densityMatrix)
         %   [CDC20_density, CDC20_loc, stats2] = GetCDC(PCD_cppa, densityMatrix)
-        %   returns CDC density value, CDC location and raw measured statistic
-        %   structure.
+        %   returns cone density centroid and the supplementary information.
         %   - PCD_cppa - peak cone density.
         %   - densityMatrix -  cone density matrix.
+        %
+        % Returns:
+        %    - CDC20_density - CDC density value
+        %    - CDC20_loc - CDC location
+        %    - stats2 - raw measured statistic structure
+
             Perc20dens = 0.8 * PCD_cppa;
             
             density_plot_norm = mat2gray(densityMatrix);

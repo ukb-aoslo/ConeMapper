@@ -1,4 +1,4 @@
-classdef EuclidianNCones < handle
+classdef EuclidianNCones < DensityMetricBase
     %EuclidianNCones calculates the cone density using the Voronoi patch areas of
     % the k nearest cones to each pixel by Jenny's algorithm
     
@@ -10,25 +10,27 @@ classdef EuclidianNCones < handle
         % for density map calculation
         Vorocones = [];
         ConeAreas = [];
-        ImageHeight = 0;
-        ImageWidth = 0;
         NumOfNearestCones = 150;
-        DensityMatrix = [];
-        
-        % for PCD
-        PCD_cppa = [];
-        MinDensity_cppa = 0;
-        PCD_loc = [];
-        
-        % for CDC
-        CDC20_density = 0;
-        CDC20_loc = [];
-        Stats2 = [];
-        
+
         % points which represent a polygon inside of which we have non
         % aproximated map
         GoodPointsEdge = [];
         GoodPointsMap = [];
+
+        % Fields defined in base class
+%         ImageHeight = 0;
+%         ImageWidth = 0;
+%         DensityMatrix = [];
+        
+        % for PCD
+%         PCD_cppa = [];
+%         MinDensity_cppa = 0;
+%         PCD_loc = [];
+        
+        % for CDC
+%         CDC20_density = 0;
+%         CDC20_loc = [];
+%         Stats2 = [];
     end
     
     methods
@@ -143,6 +145,7 @@ classdef EuclidianNCones < handle
         function coneArea = GetConeAreas(vorocones)
         %   coneArea = GetConeAreas(vorocones) returns area of each
         %   cone and number of neighbor cones for each cone.
+        %
         %   - vorocones - N*2 vector where first column is X coordinate of N cones,
         %       second column is Y coordinate of N cones.
 
@@ -164,11 +167,21 @@ classdef EuclidianNCones < handle
             numOfNearestCones, coneArea, sourceImage)
         %   densityMatrix = GetDensityMatrix(conelocs, imageHeight, imageWidth)
         %   returns a density matrix.
+        %
         %   - conelocs - locations of cones.
         %   - imageHeight - height of the source image.
         %   - imageWidth - width of the source image.
         %   - numOfNearestCones - number of cones in the area.
         %   - coneArea - array with area of each cone.
+        %   - sourceImage - the source image. Used to exclude points where we don't
+        %   have image data from densityMatrix.
+        %
+        % Returns:
+        %   - densityMatrix - the density matrix (imageHeight * imageWidth).
+        %   - goodPointsMap - mask of density matrix, representing a points without
+        %   approximation.
+        %   - goodPointsEdge - the polygon points inside of which density values are
+        %   not approximated.
             
             boundingPoly = boundary(conelocs(:, 1), conelocs(:, 2), 1);
             
@@ -241,8 +254,13 @@ classdef EuclidianNCones < handle
 
         function [PCD_cppa, minDensity_cppa, PCD_loc] = GetMinMaxCPPA(densityMatrix)
         %   [PCD_cppa, minDensity_cppa, PCD_loc] = GetMinMaxCPPA(densityMatrix)
-        %   returns peak cone density (PCD), minimum density value, and coordinates of
-        %   PCD in the density matrix
+        %   returns peak cone density and the supplementary information
+        %
+        %    - densityMatrix - the density matrix
+        % Returns:
+        %    - PCD_cppa - peak cone density (PCD) value
+        %    - minDensity_cppa - minimum density value
+        %    - PCD_loc - coordinates of PCD in the density matrix
 
             minDensity_cppa = min(densityMatrix(:));
 
@@ -254,10 +272,15 @@ classdef EuclidianNCones < handle
 
         function [CDC20_density, CDC20_loc, stats2] = GetCDC(PCD_cppa, densityMatrix)
         %   [CDC20_density, CDC20_loc, stats2] = GetCDC(PCD_cppa, densityMatrix)
-        %   returns CDC density value, CDC location and raw measured statistic
-        %   structure.
+        %   returns cone density centroid and the supplementary information.
         %   - PCD_cppa - peak cone density.
         %   - densityMatrix -  cone density matrix.
+        %
+        % Returns:
+        %    - CDC20_density - CDC density value
+        %    - CDC20_loc - CDC location
+        %    - stats2 - raw measured statistic structure
+
             Perc20dens = 0.8 * PCD_cppa;
             
             density_plot_norm = mat2gray(densityMatrix);
@@ -269,47 +292,15 @@ classdef EuclidianNCones < handle
             CDC20_density = densityMatrix(round(CDC20_loc(2)), round(CDC20_loc(1)));
         end
         
-        function contourCoordinates = GetDensityPercentageContour(densityMatrix, PCD_cppa, percentage)
-        %   contourCoordinates = GetDensityPercentageContour(densityMatrix, PCD_cppa)
-        %   returns coordinates of the contour for given percentage from
-        %   PCD_cppa value.
-        %    - densityMatrix -  cone density matrix.
-        %    - PCD_cppa - peak cone density.
-        %    - percentage - percent starting from PCD_cppa in 0..1.
-        %
-        %    - contourCoordinates - coordinates of the contour in the same
-        %    format as output of matlab "contour" function.
-        %    https://nl.mathworks.com/help/matlab/ref/contour.html#f19-795863_sep_mw_d9e727e2-79e4-4cf6-bfaf-431a164d82b0
-        %
-        %   How to extract all contours:
-        %   index = 1;
-        %   contours = {};
-        %   while index < length(contourCoordinates)
-        %       numOfPoints = contourCoordinates(2, index);
-        %       contours{end + 1} = contourCoordinates(index+1:index + numOfPoints, :)';
-        %       index = index + numOfPoints + 1;
-        %   end
-        %
-        %   Each cell in contours will be 2 column array. Each row will be
-        %   point of the polygon edge.
-            if percentage > 1 || percentage < 0
-               error("percentage MUST be between 0..1" );
-            end
-            
-            Perc20dens = (1 - percentage) * PCD_cppa;
-            
-            tempFig = figure;
-            tempAx = axes;
-            % make contour
-            contourCoordinates = contour(tempAx, densityMatrix, [Perc20dens, Perc20dens]);
-            delete(tempFig);
-        end
-        
         function boundaryConelocs = FindMapEdgeByConelocs(BWMap, conelocs)
         %   boundaryConelocs = FindMapEdgeByConelocs(BWMap, conelocs)
         %   returns boundary based on conelocs of a map.
-        %   - BWmap - the back-white map.
+        %   - BWmap - the back-white map (the mask).
         %   - conelocs - cone locations on BWMap
+        %
+        % Returns:
+        %   - boundaryConelocs - the polygon points inside of which we have all
+        %   cones, which are placed not on the zeros of the mask
             
             % round conelocs to use them as indices
             conelocs = round(conelocs);

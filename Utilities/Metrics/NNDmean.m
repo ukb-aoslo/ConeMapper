@@ -1,4 +1,4 @@
-classdef NNDmean < handle
+classdef NNDmean < DensityMetricBase
     %NNDmean calculates the cone density using average of the
     %distances to the neighbor cones. Neighbor in terms of the Voronoi
     %diagram
@@ -10,10 +10,6 @@ classdef NNDmean < handle
     properties
         % for density map calculation
         Vorocones = [];
-        ImageHeight = 0;
-        ImageWidth = 0;
-        % cones per circle area after smoothing filter (gauss)
-        DensityMatrix = [];
         % cones per "cone diameter"
         DeinstyMatrixConesPerRadius = [];
         % cones per circle area (pi * (("cone diameter") / 2)^ 2)
@@ -28,15 +24,22 @@ classdef NNDmean < handle
         %   conelocs(conelocs(:,2) > imageHeight, :) = [];
         AvgDistancesToNeighbors = [];
         
+
+        % Fields defined in base class
+%         ImageHeight = 0;
+%         ImageWidth = 0;
+        % cones per circle area after smoothing filter (gauss)
+%         DensityMatrix = [];
+        
         % for PCD
-        PCD_cppa = [];
-        MinDensity_cppa = 0;
-        PCD_loc = [];
+%         PCD_cppa = [];
+%         MinDensity_cppa = 0;
+%         PCD_loc = [];
         
         % for CDC
-        CDC20_density = 0;
-        CDC20_loc = [];
-        Stats2 = [];
+%         CDC20_density = 0;
+%         CDC20_loc = [];
+%         Stats2 = [];
     end
     
     methods
@@ -133,11 +136,18 @@ classdef NNDmean < handle
         function [densityMatrixRadial, densityMatrixArea, densityMatrixAreaFiltered, avgDistancesToNeighbors] = GetDensityMatrix(conelocs, imageHeight, imageWidth)
         %   densityMatrix = GetDensityMatrix(conelocs, imageHeight, imageWidth)
         %   returns a density matrix.
+        %
         %   - conelocs - locations of cones.
         %   - imageHeight - height of the source image.
         %   - imageWidth - width of the source image.
-        %   - numOfNearestCones - number of cones in the area.
-        %   - coneArea - array with area of each cone.
+        %
+        % Returns:
+        %   - densityMatrixRadial - the density matrix (imageHeight * imageWidth) with values, which represent cones per cone diameter (in pixels).
+        %   - densityMatrixArea - the density matrix (imageHeight * imageWidth) with values, which represent cones per cone area (in pixels^2).
+        %   - densityMatrixAreaFiltered - the density matrix (imageHeight *imageWidth)
+        %   with values, which represent cones per cone area (in pixels^2), smoothed by gauss filter.
+        %   - avgDistancesToNeighbors - values with avg distance to neighbor cones,
+        %   correspoding to each cone.
             
             conelocs = unique(conelocs, 'rows', 'stable');
             % prepare data for voronoi plot
@@ -213,8 +223,13 @@ classdef NNDmean < handle
 
         function [PCD_cppa, minDensity_cppa, PCD_loc] = GetMinMaxCPPA(densityMatrix)
         %   [PCD_cppa, minDensity_cppa, PCD_loc] = GetMinMaxCPPA(densityMatrix)
-        %   returns peak cone density (PCD), minimum density value, and coordinates of
-        %   PCD in the density matrix
+        %   returns peak cone density and the supplementary information
+        %
+        %    - densityMatrix - the density matrix
+        % Returns:
+        %    - PCD_cppa - peak cone density (PCD) value
+        %    - minDensity_cppa - minimum density value
+        %    - PCD_loc - coordinates of PCD in the density matrix
 
             minDensity_cppa = min(densityMatrix(:));
 
@@ -226,10 +241,15 @@ classdef NNDmean < handle
 
         function [CDC20_density, CDC20_loc, stats2] = GetCDC(PCD_cppa, densityMatrix)
         %   [CDC20_density, CDC20_loc, stats2] = GetCDC(PCD_cppa, densityMatrix)
-        %   returns CDC density value, CDC location and raw measured statistic
-        %   structure.
+        %   returns cone density centroid and the supplementary information.
         %   - PCD_cppa - peak cone density.
         %   - densityMatrix -  cone density matrix.
+        %
+        % Returns:
+        %    - CDC20_density - CDC density value
+        %    - CDC20_loc - CDC location
+        %    - stats2 - raw measured statistic structure
+
             Perc20dens = 0.8 * PCD_cppa;
             
             density_plot_norm = mat2gray(densityMatrix);
@@ -245,10 +265,15 @@ classdef NNDmean < handle
         % map = InterpolateDensityMap(conelocs, baseDensityValues, methodInterpolation, imageSize)
         % interpolates whole density map by values, calculated in
         % conelocations.
-        % - conelocs - cone locations.
-        % - baseDensityValues - density values corresponding to conelocs.
-        % - methodInterpolation - method for scatteredInterpolant. Use 'nearest'.
-        % - imageSize - size of original image as [rows, cols].
+        %   - conelocs - cone locations.
+        %   - baseDensityValues - density values corresponding to conelocs.
+        %   - methodInterpolation - method for scatteredInterpolant. Use 'nearest'.
+        %   - imageSize - size of original image as [rows, cols].
+        %
+        % Returns: 
+        %   - map - interpolated map, which will be look like voronoi patched blended
+        %   together.
+
             minxc = ceil(min(conelocs(:,1)));
             maxxc = floor(max(conelocs(:,1)));
             maxyc = floor(max(conelocs(:,2)));
