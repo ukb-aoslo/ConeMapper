@@ -246,6 +246,7 @@ classdef EuclidianNCones < DensityMetricBase
             % get the edge of non aproximated area
             goodPointsEdge = EuclidianNCones.FindMapEdgeByConelocs(goodPointsMap, conelocs);
             
+            % TODO: make conelocsBoundingPoly calc here for black lines
             if ~isempty(sourceImage)
                 densityMatrix(sourceImage < 8) = NaN;
             end

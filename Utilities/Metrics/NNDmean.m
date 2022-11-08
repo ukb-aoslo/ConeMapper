@@ -211,16 +211,16 @@ classdef NNDmean < DensityMetricBase
             
             % interpolate the result to get a map
             densityMatrixRadial = NNDmean.InterpolateDensityMap(conelocs, avgDistancesToNeighbors, 'nearest', [imageHeight, imageWidth]);
-            
-            densityMatrixRadial = 1./densityMatrixRadial;
+
             densityMatrixArea = (densityMatrixRadial ./ 2) .^2 .* pi;
+            densityMatrixArea = 1./densityMatrixArea;
             densityMatrixAreaFiltered = imgaussfilt(densityMatrixArea, 8);
             % invert matrix to represent it in the same way as other
             % densities
             
             close(waitbarHandler);
         end
-        
+
         function map = InterpolateDensityMap(conelocs, baseDensityValues, methodInterpolation, imageSize)
         % map = InterpolateDensityMap(conelocs, baseDensityValues, methodInterpolation, imageSize)
         % interpolates whole density map by values, calculated in
