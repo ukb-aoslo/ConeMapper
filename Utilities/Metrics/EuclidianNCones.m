@@ -244,16 +244,18 @@ classdef EuclidianNCones < DensityMetricBase
             end                                            % end of coorY loop
 
             % get the edge of non aproximated area
-            goodPointsEdge = EuclidianNCones.FindMapEdgeByConelocs(goodPointsMap, conelocs);
+            goodPointsEdge = EuclidianNCones.FindMapEdgeByConelocs(goodPointsMap, conelocs, 0.5);
             
             % TODO: make conelocsBoundingPoly calc here for black lines
             if ~isempty(sourceImage)
-                densityMatrix(sourceImage < 8) = NaN;
+                boundaryConelocs = EuclidianNCones.FindMapEdgeByConelocs(ones(imageHeight, imageWidth), conelocs, 1);
+                bw = poly2mask(boundaryConelocs(:, 1), boundaryConelocs(:, 2), imageHeight, imageWidth);
+                densityMatrix(sourceImage < 8 & bw == 0) = NaN;
             end
             close(progressBar);
         end
         
-        function boundaryConelocs = FindMapEdgeByConelocs(BWMap, conelocs)
+        function boundaryConelocs = FindMapEdgeByConelocs(BWMap, conelocs, shrinkFactor)
         %   boundaryConelocs = FindMapEdgeByConelocs(BWMap, conelocs)
         %   returns boundary based on conelocs of a map.
         %   - BWmap - the back-white map (the mask).
@@ -279,7 +281,7 @@ classdef EuclidianNCones < DensityMetricBase
             [row,col] = ind2sub([rows, cols], conesInsideMap);
             
             % find a boundary of the set
-            boundingPoly = boundary(col, row);
+            boundingPoly = boundary(col, row, shrinkFactor);
             boundaryConelocs = [col(boundingPoly), row(boundingPoly)];
         end
     end
