@@ -1,11 +1,12 @@
 <?xml version='1.0' encoding='utf-8' ?>
-<!-- $Date: 2022-11-11 15:10:48 $ -->
+<!-- $Date: 2022-11-14 13:49:23 $ -->
 
 <toc version="2.0">
 
 <tocitem target="Welcome to ConeFinder App.html" image="$toolbox/matlab/icons/book_mat.gif">Cone Finder App
    <tocitem target="Welcome to ConeFinder App.html">Welcome to ConeFinder App</tocitem>
    <tocitem target="Basics.html" image="$toolbox/matlab/icons/book_mat.gif">Basics
+      <tocitem target="Cone Finder File structure.html">Cone Finder File structure</tocitem>
       <tocitem target="HotKeys.html">HotKeys</tocitem>
       <tocitem target="Interface and settings.html">Interface and settings</tocitem>
       <tocitem target="Layers.html">Layers</tocitem>

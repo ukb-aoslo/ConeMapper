@@ -6,7 +6,7 @@ function [cent, varargout] = FastPeakFind(d, thres, filt, edg, res, fid)
 % is too much pile up and set threshold or user defined filter accordingly.
 %
 % How the code works:
-% In theory, each peak is a smooth point spread function (SPF), like a
+% In theory, each peak is a smooth point spread function (PSF), like a
 % Gaussian of some size, etc. In reality, there is always noise, such as
 % "salt and pepper" noise, which typically has a 1 pixel variation.
 % Because the peak's PSF is assumed to be larger than 1 pixel, the "true"
@@ -58,7 +58,9 @@ function [cent, varargout] = FastPeakFind(d, thres, filt, edg, res, fid)
 
 %% defaults
 if (nargin < 1)
-    d = uint16(conv2(reshape(single(2^14*(rand(1, 1024*1024) > 0.99995)), [1024, 1024]), fspecial('gaussian', 15, 3), 'same')+2^8*rand(1024));
+    d = uint16(...
+        conv2(reshape(single(2^14*(rand(1, 1024*1024) > 0.99995)), [1024, 1024]), fspecial('gaussian', 15, 3), 'same')...
+        + 2^8*rand(1024));
     imagesc(d);
 end
 
