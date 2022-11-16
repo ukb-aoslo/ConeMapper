@@ -10,10 +10,11 @@ classdef NNDmean < DensityMetricBase
     properties
         % for density map calculation
         Vorocones = [];
-        % cones per "cone diameter"
-        DeinstyMatrixConesPerRadius = [];
-        % cones per circle area (pi * (("cone diameter") / 2)^ 2)
-        DeinstyMatrixConesPerAreaNotFiltered = [];
+        % average distance to neighbors expanded to map
+        AvgDistanceMap = [];
+        % cones per hex area (2*sqrt(3) * (("cone diameter") / 2)^ 2)
+        % by defenition of Voronoi, we are getting here the "small" radius of hex
+        DensityMatrixConesPerAreaNotFiltered = [];
         
         % distance between 2 cones in pixels
         % data points correspond to set of cones:
@@ -67,7 +68,7 @@ classdef NNDmean < DensityMetricBase
         %   recalculates all the data for density map.
         %   - obj - the current class object.
             
-            [obj.DeinstyMatrixConesPerRadius, obj.DeinstyMatrixConesPerAreaNotFiltered, obj.DensityMatrix, obj.AvgDistancesToNeighbors] = ...
+            [obj.AvgDistanceMap, obj.DensityMatrixConesPerAreaNotFiltered, obj.DensityMatrix, obj.AvgDistancesToNeighbors] = ...
                 NNDmean.GetDensityMatrix(obj.Vorocones, obj.ImageHeight, obj.ImageWidth);
             
             [obj.PCD_cppa, obj.MinDensity_cppa, obj.PCD_loc] = NNDmean.GetMinMaxCPPA(obj.DensityMatrix);
@@ -81,8 +82,8 @@ classdef NNDmean < DensityMetricBase
             s.ImageHeight = obj.ImageHeight;
             s.ImageWidth = obj.ImageWidth;
             s.DensityMatrix = obj.DensityMatrix;
-            s.DeinstyMatrixConesPerRadius = obj.DeinstyMatrixConesPerRadius;
-            s.DeinstyMatrixConesPerAreaNotFiltered = obj.DeinstyMatrixConesPerAreaNotFiltered;
+            s.AvgDistanceMap = obj.AvgDistanceMap;
+            s.DensityMatrixConesPerAreaNotFiltered = obj.DensityMatrixConesPerAreaNotFiltered;
             s.AvgDistancesToNeighbors = obj.AvgDistancesToNeighbors;
 
             % for PCD
@@ -107,11 +108,11 @@ classdef NNDmean < DensityMetricBase
                 newObj.ImageWidth = s.ImageWidth;
                 newObj.DensityMatrix = s.DensityMatrix;
 
-                if isfield(s,'DeinstyMatrixConesPerRadius')
-                    newObj.DeinstyMatrixConesPerRadius = s.DeinstyMatrixConesPerRadius;
+                if isfield(s,'AvgDistanceMap')
+                    newObj.AvgDistanceMap = s.AvgDistanceMap;
                 end
-                if isfield(s,'DeinstyMatrixConesPerAreaNotFiltered')
-                    newObj.DeinstyMatrixConesPerAreaNotFiltered = s.DeinstyMatrixConesPerAreaNotFiltered;
+                if isfield(s,'DensityMatrixConesPerAreaNotFiltered')
+                    newObj.DensityMatrixConesPerAreaNotFiltered = s.DensityMatrixConesPerAreaNotFiltered;
                 end
                 if isfield(s,'AvgDistancesToNeighbors')
                     newObj.AvgDistancesToNeighbors = s.AvgDistancesToNeighbors;
@@ -212,7 +213,7 @@ classdef NNDmean < DensityMetricBase
             % interpolate the result to get a map
             densityMatrixRadial = NNDmean.InterpolateDensityMap(conelocs, avgDistancesToNeighbors, 'nearest', [imageHeight, imageWidth]);
 
-            densityMatrixArea = (densityMatrixRadial ./ 2) .^2 .* pi;
+            densityMatrixArea = (densityMatrixRadial) .^2 ./ 2 .* sqrt(3);
             densityMatrixArea = 1./densityMatrixArea;
             densityMatrixAreaFiltered = imgaussfilt(densityMatrixArea, 8);
             % invert matrix to represent it in the same way as other
