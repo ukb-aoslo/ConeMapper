@@ -1,4 +1,4 @@
-function [densityRadialAverage, radiuses, isApproximated] = GetDensityRadialAverage(densityMatrix, coneDensityCentroid)
+function [densityRadialAverage, densityRadialStd, radiuses, isApproximated] = GetDensityRadialAverage(densityMatrix, coneDensityCentroid)
     % GetDensityRadialAverage returns density radial average starting in CDC point.
     % Based on Julius Ameln approach.
     %    - densityMatrix - matrix of density values. Matrix is the same size as the
@@ -33,6 +33,7 @@ function [densityRadialAverage, radiuses, isApproximated] = GetDensityRadialAver
 
     % preallocate memory
     densityRadialAverage = nan(length(coordinatesByDistance), 1);
+    densityRadialStd = nan(length(coordinatesByDistance), 1);
     isApproximated = false(length(coordinatesByDistance), 1);
 
     radiuses = unique(radiuses);
@@ -46,6 +47,7 @@ function [densityRadialAverage, radiuses, isApproximated] = GetDensityRadialAver
         isNaN = isnan(densityValuesToAverage);
         % calculate mean
         densityRadialAverage(iCoord) = mean(densityValuesToAverage(~isNaN));
+        densityRadialStd(iCoord) = std(densityValuesToAverage(~isNaN));
         % check if it is approximate
         isApproximated(iCoord) = any(isNaN) || radiuses(iCoord) > minDistanceToSide;
     end
