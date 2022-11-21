@@ -30,12 +30,16 @@ classdef YellotsRings < DensityMetricBase
     end
     
     methods
-        function obj = YellotsRings(sourceImage)
+        function obj = YellotsRings(sourceImage, roiSize)
             %YELLOTSRINGS Construct an instance of this class
             if nargin > 0
               	obj.SourceImage = sourceImage;
             else
                 return;
+            end
+
+            if nargin > 1
+                obj.ROI_size = roiSize;
             end
             
             Recalculate(obj);
@@ -59,6 +63,8 @@ classdef YellotsRings < DensityMetricBase
             % for density map calculation
             s.SourceImage = obj.SourceImage;
             s.DensityMatrix = obj.DensityMatrix;
+            s.ROI_size = obj.ROI_size;
+            s.DensityMatrixBeforeSmoothing = obj.DensityMatrixBeforeSmoothing;
             s.avgPixelSpac = obj.avgPixelSpac;
             s.interpedSpacMap = obj.interpedSpacMap;
             s.interpedConfMap = obj.interpedConfMap;
@@ -84,6 +90,13 @@ classdef YellotsRings < DensityMetricBase
                 % for density map calculation
                 newObj.SourceImage = s.SourceImage;
                 newObj.DensityMatrix = s.DensityMatrix;
+                if isfield(s,'ROI_size')
+                    newObj.ROI_size = s.ROI_size;
+                end
+                if isfield(s,'DensityMatrixBeforeSmoothing')
+                    newObj.DensityMatrixBeforeSmoothing = s.DensityMatrixBeforeSmoothing;
+                end
+
                 newObj.avgPixelSpac = s.avgPixelSpac;
                 newObj.interpedSpacMap = s.interpedSpacMap;
                 newObj.interpedConfMap = s.interpedConfMap;
