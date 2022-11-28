@@ -31,7 +31,11 @@ function densityRadialDataStruct = GetDensityRadialAverage(densityMatrix, coneDe
     end
 
     % find all relevant pixel in the matrix (not NaNs)
-    [coordY, coordX] = find(~isnan(densityMatrix));
+    [dmHeight, dmWidth, ~] = size(densityMatrix);
+    [XX,YY] = ndgrid(1:dmWidth, 1:dmHeight);
+    coordX = XX(:);
+    coordY = YY(:);
+%     [coordY, coordX] = find(~isnan(densityMatrix));
     coordinatesToAllPoints = [coordX,coordY];
 
     % center all matrix point on the cdc (cdc coord == 0/0)
@@ -107,5 +111,14 @@ function [densityRadialAverage, densityRadialStd, isApproximated, radiuses, dens
         densityRadialPercentiles(:, iCoord) = prctile(densityValuesToAverage(~isNaN), percents);
         % check if it is approximate
         isApproximated(iCoord) = any(isNaN) || radiuses(iCoord) > minDistanceToSide;
+    end
+
+    firstNanIndex = find(isnan(densityRadialAverage), 1, 'first');
+    if firstNanIndex > 1
+        densityRadialAverage = densityRadialAverage(1:firstNanIndex-1);
+        densityRadialStd = densityRadialStd(1:firstNanIndex-1);
+        isApproximated = isApproximated(1:firstNanIndex-1);
+        radiuses = radiuses(1:firstNanIndex-1);
+        densityRadialPercentiles = densityRadialPercentiles(:, 1:firstNanIndex-1);
     end
 end
