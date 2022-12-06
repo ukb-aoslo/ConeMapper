@@ -42,6 +42,16 @@ function [avgPixelSpac, interpedSpacMap, interpedConfMap, sumMap, imBox] = FitFo
         imBox(4) = imBox(4) + heightDiff;
     end
     
+    yStepArray = imBox(2):roiStep:imBox(2) + imBox(4) - roiSize;
+    if yStepArray(end) + roiSize < imBox(4)
+        yStepArray = [yStepArray, imComponents.ImageSize(1) - roiSize + 1];
+    end
+
+    xStepArray = imBox(1):roiStep:imBox(1) + imBox(3) - roiSize;
+    if xStepArray(end) + roiSize < imBox(3)
+        xStepArray = [xStepArray, imComponents.ImageSize(1) - roiSize + 1];
+    end
+
     if any(imSize(1:2) <= roiSize)
         % Our roi size should always be divisible by 2 (for simplicity).
         if rem(max(roiSize), 2) ~= 0
@@ -53,15 +63,16 @@ function [avgPixelSpac, interpedSpacMap, interpedConfMap, sumMap, imBox] = FitFo
         padSize = ceil((max(roiSize) - imSize) / 2);
         regionsOfInterest = {padarray(sourceImage, padSize, 'both')};
     else
-        regionsOfInterest = cell(round((size(sourceImage) - roiSize) / roiStep));
+%         regionsOfInterest = cell(round((size(sourceImage) - roiSize) / roiStep));
+        regionsOfInterest = cell(length(yStepArray), length(xStepArray));
         
         % Our roi size should always be divisible by 2 (for simplicity).
         if rem(roiSize, 2) ~= 0
             roiSize = roiSize - 1;
         end
         
-        for indI = imBox(2):roiStep:imBox(2) + imBox(4) - roiSize
-            for indJ = imBox(1):roiStep:imBox(1) + imBox(3) - roiSize
+        for indI = yStepArray
+            for indJ = xStepArray
                 numzeros = sum(sum(sourceImage(indI:indI + roiSize - 1, indJ:indJ + roiSize - 1) <= 10));
 
                 if numzeros < (roiSize*roiSize)*0.05
@@ -140,8 +151,8 @@ function [avgPixelSpac, interpedSpacMap, interpedConfMap, sumMap, imBox] = FitFo
         roiCoverage = roiSize;
         hann_twodee = 1;
 
-        for indI = imBox(2):roiStep:imBox(2) + imBox(4) - roiSize
-            for indJ = imBox(1):roiStep:imBox(1) + imBox(3) - roiSize
+        for indI = yStepArray
+            for indJ = xStepArray
                 if ~isnan(pixelSpac(round(indI/roiStep) + 1, round(indJ/roiStep) + 1))
                     thiserr = confidence(round(indI/roiStep) + 1, round(indJ/roiStep) + 1)^2;
 

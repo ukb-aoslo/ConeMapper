@@ -5,7 +5,7 @@ classdef YellotsRings < DensityMetricBase
     
     properties
         SourceImage = [];
-        ROI_size = 200;
+        ROI_size = 150;
         DensityMatrixBeforeSmoothing = [];
         avgPixelSpac = [];
         interpedSpacMap = [];
