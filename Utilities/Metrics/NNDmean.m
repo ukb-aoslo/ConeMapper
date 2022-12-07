@@ -215,7 +215,10 @@ classdef NNDmean < DensityMetricBase
 
             densityMatrixArea = (densityMatrixRadial) .^2 ./ 2 .* sqrt(3);
             densityMatrixArea = 1./densityMatrixArea;
-            densityMatrixAreaFiltered = imgaussfilt(densityMatrixArea, 8);
+
+            filter = fspecial('gaussian', 2*2*8+1, 8);
+            densityMatrixAreaFiltered = nanconv(densityMatrixArea, filter, 'nanout');
+%             densityMatrixAreaFiltered = imgaussfilt(densityMatrixArea, 8);
             % invert matrix to represent it in the same way as other
             % densities
             
