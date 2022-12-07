@@ -186,10 +186,10 @@ classdef EuclidianNCones < DensityMetricBase
             boundingPoly = boundary(conelocs(:, 1), conelocs(:, 2), 1);
             
             % get starting coordinates (exclude the border area)
-            pixelStartX = round(min(conelocs(:,1)));
-            pixelEndX   = round(max(conelocs(:,1)));
-            pixelStartY = round(min(conelocs(:,2)));
-            pixelEndY   = round(max(conelocs(:,2)));
+            pixelStartX = round(max([min(conelocs(:,1)), 1]));
+            pixelEndX   = round(min([max(conelocs(:,1)), imageWidth]));
+            pixelStartY = round(max([min(conelocs(:,2)), 1]));
+            pixelEndY   = round(min([max(conelocs(:,2)), imageHeight]));
 
             % preallocate memory for density matrix
             densityMatrix = nan(imageHeight, imageWidth);
