@@ -67,7 +67,7 @@ sza = size(a);
 % If 1D, then convert them both to columns.
 % This modification only matters if 'a' or 'k' is a row vector, and the
 % other is a column vector. Otherwise, this argument has no effect.
-if(is1D);
+if(is1D)
     if(~isvector(a) || ~isvector(k))
         error('MATLAB:conv:AorBNotVector','A and B must be vectors.');
     end
@@ -88,14 +88,15 @@ a(n) = 0;
 on(n) = 0;
 
 % Check that the filter does not have NaNs.
-if(any(isnan(k)));
+if(any(isnan(k)))
     error([mfilename ':NaNinFilter'],'Filter (k) contains NaN values.');
 end
 
 % Calculate what a 'flat' function looks like after convolution.
 if(any(n(:)) || edge)
     flat = conv2(on,k,shape);
-else flat = o;
+else 
+    flat = o;
 end
 
 % The line above will automatically include a correction for edge effects,

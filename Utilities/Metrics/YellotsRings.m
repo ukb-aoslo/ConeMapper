@@ -164,7 +164,8 @@ classdef YellotsRings < DensityMetricBase
             % To density, assuming perfect packing
             densityMatrixBeforeSmoothing = sqrt(3)./ (2*(blendedImage).^2);
 
-            filter = fspecial('gaussian', 3, 8);
+            sigma = 8;
+            filter = fspecial('gaussian', 2*ceil(2*sigma)+1, sigma);
             densityMatrix = nanconv(densityMatrixBeforeSmoothing, filter, 'nanout');
 %             densityMatrix = imgaussfilt(densityMatrixBeforeSmoothing, 8);
         end
