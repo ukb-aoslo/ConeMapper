@@ -1,3 +1,15 @@
+### 14.12.2022
+ - New features:
+    - Add Density calculations (Euclidian N Cones, Nearest Neighbor mean, Yellots Rings)
+    - Add Statistics window
+    - Add Scalebar
+    - Add Documentation
+    - Add Units settings
+
+ - Fixed:
+    - Errors of the UI
+    - Saving file errors
+
 ### 14.04.2022
  - New features:
     - Add colormaps for voronoi diagram
