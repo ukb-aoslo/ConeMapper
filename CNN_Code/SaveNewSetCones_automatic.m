@@ -3,7 +3,7 @@
 % Released under a GPL v2 license.
 
 
-function [conelocs] = SaveNewSetCones_automatic(params,ImageDir,ImExtension,boxposition,I, cnnCalcType)
+function [conelocs] = SaveNewSetCones_automatic(params, ImageDir, I, cnnCalcType)
 % function to find cones using pretrained CNN on new images
 
 % Get half patch size
@@ -120,23 +120,22 @@ multiple_mosaics = 0;
 % mkdir(SaveDir);
 % end
 
-newMap = RecollectMap(probMaps, ...
-        positions_startX, positions_startY, positions_endX, positions_endY, ...
-        cutoutsINrowX, cutoutsINrowY, originalSizeY, originalSizeX, ...
-        offsetX, offsetY);
+% newMap = RecollectMap(probMaps, ...
+%         positions_startX, positions_startY, positions_endX, positions_endY, ...
+%         cutoutsINrowX, cutoutsINrowY, originalSizeY, originalSizeX, ...
+%         offsetX, offsetY);
 
 % now we need to try to extract new cones from new map
 % Determine cone locations
-[CNNPos2] = ProbabilityMap_ConeLocations(newMap,ProbParam);
+% [CNNPos2] = ProbabilityMap_ConeLocations(newMap,ProbParam);
 % conelocs = CNNPos2;
 
 % [~,BaseName] = fileparts(ImageList{iFile});
 imageSize = size(I);
 SaveName = [ImageDir(1:end-4) '_annotated.mat'];
-save(fullfile(SaveName),'I', 'boxposition', 'conelocs','multiple_mosaics','imageSize');
+save(fullfile(SaveName),'I', 'conelocs', 'multiple_mosaics', 'imageSize');
 imwrite(probMapFull, [ImageDir(1:end-4), '_probMap.png']);
-
-imwrite(newMap, [ImageDir(1:end-4), '_probMap2.png']);
+% imwrite(newMap, [ImageDir(1:end-4), '_probMap2.png']);
 end
 
 
