@@ -43,6 +43,7 @@ classdef scalebar <handle
 		hTextY_Pos            %SCALE-Y-LABEL-POSITION
 		hTextY_Rot=90         %SCALE-Y-LABEL-ROTATION
         Visible = 'on';
+        Color = [1 1 1];
 
         PixelsPerDegree = 600;
 	end
@@ -64,7 +65,7 @@ classdef scalebar <handle
             
             %listen to Prop change
             for prop={'XLen','YLen','XUnit','YUnit','hTextY_Rot'...
-                      'Position','Border','hTextX_Pos','hTextY_Pos', 'Visible'}
+                      'Position','Border','hTextX_Pos','hTextY_Pos', 'Visible', 'Color'}
                 funstr = eval(['@hobj.Set',prop{1}]);
                 addlistener(hobj,prop{1},'PostSet',funstr);
             end
@@ -113,6 +114,7 @@ classdef scalebar <handle
             p.addParameter('hTextY_Pos',0.02*[-axisXWidth, axisYWidth]);
             p.addParameter('hTextY_Rot',hobj.hTextY_Rot);
             p.addParameter('Visible', hobj.Visible);
+            p.addParameter('Color', [1 1 1]);
             if isempty(varargin) %scalebar() 
                 p.parse();
             elseif ~ishandle(varargin{1}) %scalebar('Prop','Value')
@@ -122,7 +124,7 @@ classdef scalebar <handle
             end
 			%default settings
             for prop={'XLen','YLen','XUnit','YUnit','hTextY_Rot',...
-                      'Position','Border','hTextX_Pos','hTextY_Pos', 'Visible'}
+                      'Position','Border','hTextX_Pos','hTextY_Pos', 'Visible', 'Color'}
                 hobj.(prop{1}) = p.Results.(prop{1});
             end
         end
@@ -249,6 +251,14 @@ classdef scalebar <handle
                 set(hobj.hTextY, 'String',  ...
                     sprintf([GetFormatStringByUnit(value), value], hobj.YLen * scaleCoefficient));
             end
+        end
+        
+        function SetColor(hobj, varargin)
+            color = hobj.Color;
+            set(hobj.hLineX, 'Color', color);
+            set(hobj.hLineY, 'Color', color);
+            set(hobj.hTextX, 'Color', color);
+            set(hobj.hTextY, 'Color', color);
         end
 	end
 	methods (Access = private)
