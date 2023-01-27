@@ -29,6 +29,7 @@ classdef scalebar <handle
 		hLineY %SCALE-Y-LINE, L&H
 		hTextX %SCALE-X-LABEL
 		hTextY %SCALE-Y-LABEL
+        hBackground     %Transparent Patch
         hAxes
 	end
 	properties (SetObservable=true)
@@ -223,6 +224,11 @@ classdef scalebar <handle
 		end
 		function SetXLen(hobj, varargin)
             value = hobj.XLen;
+            valueUnit = hobj.XUnit;
+            scaleCoefficient = GetScaleCoefficient(valueUnit, hobj.PixelsPerDegree);
+            value = value * scaleCoefficient;
+            value = round(value, GetRoundNumber(value)) / scaleCoefficient;
+            hobj.XLen = value;
 			XPos = hobj.Position(1);
 			set(hobj.hLineX, 'XData', XPos+[0 value]);
 			set(hobj.hLineY(2), 'XData', XPos*[1 1]+value);
@@ -308,13 +314,26 @@ function formatString = GetFormatStringByUnit(unit)
         case {'pixel', 'px', '', 'arcsec'}
             formatString = '%5.0f ';
 
-        case 'arcmin'
-            formatString = '%5.2f ';
-
-        case {'degree', 'deg'}
-            formatString = '%6.4f ';
+        case {'arcmin', 'degree', 'deg'}
+            formatString = '%g ';
 
         otherwise
             error(["Unknown unit: ", unit]);
+    end
+end
+
+function roundingNumber = GetRoundNumber(value)
+    if value < 0.0001
+        roundingNumber = 5;
+    elseif value < 0.001
+        roundingNumber = 4;
+    elseif value < 0.01
+        roundingNumber = 3;
+    elseif value < 0.1
+        roundingNumber = 2;
+    elseif value < 1
+        roundingNumber = 1;
+    else
+        roundingNumber = 0;
     end
 end
