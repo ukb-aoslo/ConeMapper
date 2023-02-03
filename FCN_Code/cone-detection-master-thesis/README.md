@@ -1,5 +1,13 @@
 # Regularity-Aware Detection of Cone Photoreceptors via CNNs and Particle Systems
 
+## Installation
+
+Install the newest NVIDIA drivers
+
+Install python 3.6 or greater
+
+Run in terminal in folder with FCN `pip install -r requirements.txt`. It should automatically install all necessary packages.
+
 ## Usage
 
 There are pretrained models in the folder `pretrained_models`. See `detect.py` for an example
