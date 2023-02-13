@@ -47,6 +47,7 @@ classdef scalebar <handle
         Color = [1 1 1];
 
         PixelsPerDegree = 600;
+        RMF = NaN;
 	end
 	methods
 		function hobj = scalebar(varargin)                        
@@ -234,9 +235,13 @@ classdef scalebar <handle
 		function SetXLen(hobj, varargin)
             value = hobj.XLen;
             valueUnit = hobj.XUnit;
-            scaleCoefficient = GetScaleCoefficient(valueUnit, hobj.PixelsPerDegree);
-            value = value * scaleCoefficient;
-            value = round(value, GetRoundNumber(value)) / scaleCoefficient;
+            scaleCoefficient = GetScaleCoefficient(valueUnit, hobj.PixelsPerDegree, hobj.RMF);
+            
+            if ~isnan(scaleCoefficient)
+                value = value * scaleCoefficient;
+                value = round(value, GetRoundNumber(value)) / scaleCoefficient;
+            end
+
             hobj.XLen = value;
 			XPos = hobj.Position(1);
 			set(hobj.hLineX, 'XData', XPos+[0 value]);
@@ -253,7 +258,7 @@ classdef scalebar <handle
 		function SetXUnit(hobj,  varargin)
             value = hobj.XUnit;
             if ishandle(hobj.hTextX)
-                scaleCoefficient = GetScaleCoefficient(value, hobj.PixelsPerDegree);
+                scaleCoefficient = GetScaleCoefficient(value, hobj.PixelsPerDegree, hobj.RMF);
                 set(hobj.hTextX, 'String', ...
                     sprintf([GetFormatStringByUnit(value), value], hobj.XLen * scaleCoefficient));
 
@@ -262,7 +267,7 @@ classdef scalebar <handle
 		function SetYUnit(hobj,  varargin)
             value = hobj.YUnit;
             if ishandle(hobj.hTextY)
-                scaleCoefficient = GetScaleCoefficient(value, hobj.PixelsPerDegree);
+                scaleCoefficient = GetScaleCoefficient(value, hobj.PixelsPerDegree, hobj.RMF);
                 set(hobj.hTextY, 'String',  ...
                     sprintf([GetFormatStringByUnit(value), value], hobj.YLen * scaleCoefficient));
             end
@@ -336,10 +341,10 @@ end
 
 function formatString = GetFormatStringByUnit(unit)
     switch unit
-        case {'pixel', 'px', '', 'arcsec'}
+        case {'pixel', 'px', '', 'arcsec', 'arcmin', 'degree', 'deg'}
             formatString = '%g ';
 
-        case {'arcmin', 'degree', 'deg'}
+        case {'micrometer', 'µm', 'millimeter', 'mm'}
             formatString = '%g ';
 
         otherwise

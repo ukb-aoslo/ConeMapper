@@ -13,8 +13,13 @@ function unitString = GetUnitsToPrint(unit)
         case 'degree'
             unitString = 'deg';
 
+        case 'millimeter'
+            unitString = 'mm';
+            
+        case 'micrometer'
+            unitString = 'µm';
+
         otherwise
             error(["Unknown unit: ", unit]);
     end
 end
-

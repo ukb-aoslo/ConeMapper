@@ -1,4 +1,4 @@
-function scaleCoefficient = GetScaleCoefficient(unit, pixelsPerDegree)
+function scaleCoefficient = GetScaleCoefficient(unit, pixelsPerDegree, rmf)
     % GetScaleCoefficient Returns scale coefficient, which is necessary to 
     % apply to pixel value based on pixels per degree and given unit
     %
@@ -11,6 +11,11 @@ function scaleCoefficient = GetScaleCoefficient(unit, pixelsPerDegree)
 
     % 1 degree = 60 arcmin;
     % 1 arcmin = 60 arcsec;
+
+    if nargin < 3
+        rmf = NaN;
+    end
+
     switch unit
         case {'pixel', 'px', ''}
             scaleCoefficient = 1;
@@ -23,6 +28,14 @@ function scaleCoefficient = GetScaleCoefficient(unit, pixelsPerDegree)
 
         case {'degree', 'deg'}
             scaleCoefficient = 1 / pixelsPerDegree;
+
+        % micrometer = 10^(-6) meter
+        case {'micrometer', 'µm'}
+            scaleCoefficient = rmf / pixelsPerDegree;
+
+        % millimeter = 10^(-3) meter
+        case {'millimeter', 'mm'}
+            scaleCoefficient = 0.001 * rmf / pixelsPerDegree;
 
         otherwise
             error(["Unknown unit: ", unit]);
