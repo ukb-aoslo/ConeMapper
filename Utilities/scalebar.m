@@ -46,7 +46,7 @@ classdef scalebar <handle
         Visible = 'on';
         Color = [1 1 1];
 
-        PixelsPerDegree = 600;
+        ImageMagnificationFactor = 600;
         RMF = NaN;
 	end
 	methods
@@ -235,7 +235,7 @@ classdef scalebar <handle
 		function SetXLen(hobj, varargin)
             value = hobj.XLen;
             valueUnit = hobj.XUnit;
-            scaleCoefficient = GetScaleCoefficient(valueUnit, hobj.PixelsPerDegree, hobj.RMF);
+            scaleCoefficient = GetScaleCoefficient(valueUnit, hobj.ImageMagnificationFactor, hobj.RMF);
             
             if ~isnan(scaleCoefficient)
                 value = value * scaleCoefficient;
@@ -258,7 +258,7 @@ classdef scalebar <handle
 		function SetXUnit(hobj,  varargin)
             value = hobj.XUnit;
             if ishandle(hobj.hTextX)
-                scaleCoefficient = GetScaleCoefficient(value, hobj.PixelsPerDegree, hobj.RMF);
+                scaleCoefficient = GetScaleCoefficient(value, hobj.ImageMagnificationFactor, hobj.RMF);
                 set(hobj.hTextX, 'String', ...
                     sprintf([GetFormatStringByUnit(value), value], hobj.XLen * scaleCoefficient));
 
@@ -267,7 +267,7 @@ classdef scalebar <handle
 		function SetYUnit(hobj,  varargin)
             value = hobj.YUnit;
             if ishandle(hobj.hTextY)
-                scaleCoefficient = GetScaleCoefficient(value, hobj.PixelsPerDegree, hobj.RMF);
+                scaleCoefficient = GetScaleCoefficient(value, hobj.ImageMagnificationFactor, hobj.RMF);
                 set(hobj.hTextY, 'String',  ...
                     sprintf([GetFormatStringByUnit(value), value], hobj.YLen * scaleCoefficient));
             end
