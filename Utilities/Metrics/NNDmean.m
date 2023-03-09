@@ -12,10 +12,10 @@ classdef NNDmean < DensityMetricBase
         Vorocones = [];
         % average distance to neighbors expanded to map and std map
         AvgDistanceMap = [];
-        stdDistanceMap = [];
+        StdDistanceMap = [];
         % abbreviated distance maps
-        minDistanceMap = [];
-        maxDistanceMap = [];        
+        MinDistanceMap = [];
+        MaxDistanceMap = [];        
 
         % cones per hex area (2*sqrt(3) * (("cone diameter") / 2)^ 2)
         % by defenition of Voronoi, we are getting here the "small" radius of hex
@@ -23,9 +23,9 @@ classdef NNDmean < DensityMetricBase
         
         % lists with specific distances of respective cell towards neighbor cells
         AvgDistancesToNeighbors = [];
-        stdDistancesToNeighbors = [];
-        minDistancesToNeighbors = [];
-        maxDistancesToNeighbors = [];
+        StdDistancesToNeighbors = [];
+        MinDistancesToNeighbors = [];
+        MaxDistancesToNeighbors = [];
 
         % Fields defined in base class
 %         ImageHeight = 0;
@@ -70,8 +70,8 @@ classdef NNDmean < DensityMetricBase
         %   - obj - the current class object.
             
             [obj.AvgDistanceMap, obj.DensityMatrixConesPerAreaNotFiltered, obj.DensityMatrix, obj.AvgDistancesToNeighbors, ...
-              obj.minDistanceMap, obj.maxDistanceMap, obj.stdDistanceMap, obj.minDistancesToNeighbors, obj.maxDistancesToNeighbors, ...
-              obj.stdDistancesToNeighbors  ] = ...
+              obj.MinDistanceMap, obj.MaxDistanceMap, obj.StdDistanceMap, obj.MinDistancesToNeighbors, obj.MaxDistancesToNeighbors, ...
+              obj.StdDistancesToNeighbors  ] = ...
                 NNDmean.GetDensityMatrix(obj.Vorocones, obj.ImageHeight, obj.ImageWidth);
 
             [obj.PCD_cppa, obj.MinDensity_cppa, obj.PCD_loc] = NNDmean.GetMinMaxCPPA(obj.DensityMatrix);
@@ -88,12 +88,12 @@ classdef NNDmean < DensityMetricBase
             s.AvgDistanceMap = obj.AvgDistanceMap;
             s.DensityMatrixConesPerAreaNotFiltered = obj.DensityMatrixConesPerAreaNotFiltered;
             s.AvgDistancesToNeighbors = obj.AvgDistancesToNeighbors;
-            s.minDistanceMap = obj.minDistanceMap;
-            s.maxDistanceMap = obj.maxDistanceMap;
-            s.stdDistanceMap = obj.stdDistanceMap;
-            s.minDistancesToNeighbors = obj.minDistancesToNeighbors;
-            s.maxDistancesToNeighbors = obj.maxDistancesToNeighbors;
-            s.stdDistancesToNeighbors = obj.stdDistancesToNeighbors;
+            s.MinDistanceMap = obj.MinDistanceMap;
+            s.MaxDistanceMap = obj.MaxDistanceMap;
+            s.StdDistanceMap = obj.StdDistanceMap;
+            s.MinDistancesToNeighbors = obj.MinDistancesToNeighbors;
+            s.MaxDistancesToNeighbors = obj.MaxDistancesToNeighbors;
+            s.StdDistancesToNeighbors = obj.StdDistancesToNeighbors;
            
             % for PCD
             s.PCD_cppa = obj.PCD_cppa;
@@ -126,23 +126,23 @@ classdef NNDmean < DensityMetricBase
                 if isfield(s,'AvgDistancesToNeighbors')
                     newObj.AvgDistancesToNeighbors = s.AvgDistancesToNeighbors;
                 end
-                if isfield(s,'minDistanceMap')
-                    newObj.minDistanceMap = s.minDistanceMap;
+                if isfield(s,'MinDistanceMap')
+                    newObj.MinDistanceMap = s.MinDistanceMap;
                 end
-                if isfield(s,'maxDistanceMap')
-                    newObj.maxDistanceMap = s.maxDistanceMap;
+                if isfield(s,'MaxDistanceMap')
+                    newObj.MaxDistanceMap = s.MaxDistanceMap;
                 end
-                if isfield(s,'stdDistanceMap')
-                    newObj.stdDistanceMap = s.stdDistanceMap;
+                if isfield(s,'StdDistanceMap')
+                    newObj.StdDistanceMap = s.StdDistanceMap;
                 end
-                if isfield(s,'minDistancesToNeighbors')
-                    newObj.minDistancesToNeighbors = s.minDistancesToNeighbors;
+                if isfield(s,'MinDistancesToNeighbors')
+                    newObj.MinDistancesToNeighbors = s.MinDistancesToNeighbors;
                 end
-                if isfield(s,'maxDistancesToNeighbors')
-                    newObj.maxDistancesToNeighbors = s.maxDistancesToNeighbors;
+                if isfield(s,'MaxDistancesToNeighbors')
+                    newObj.MaxDistancesToNeighbors = s.MaxDistancesToNeighbors;
                 end
-                if isfield(s,'stdDistancesToNeighbors')
-                    newObj.stdDistancesToNeighbors = s.stdDistancesToNeighbors;
+                if isfield(s,'StdDistancesToNeighbors')
+                    newObj.StdDistancesToNeighbors = s.StdDistancesToNeighbors;
                 end
                 
 
