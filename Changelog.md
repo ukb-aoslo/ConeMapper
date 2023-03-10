@@ -1,3 +1,32 @@
+### 10.03.2023
+ - Deleted:
+    - Unnecessary versions of CNN
+    - Unit settings window
+    - Density contour settings window
+    - Density properties window
+
+ - New features:
+    - Completely redesigned interface
+    - Add Retinal Magnification Factor
+    - Add colorbar
+    - Add micrometers and millimeters
+    - Add new RMF/IMF save logic
+    - Add ability to set custom limits for density map
+    - Add FCN (from Patrick Hähn)
+    - Add manual annotatioin of rods
+    - Add to NNDmean new fields: std, min, max values and maps
+
+ - Updated:
+    - Scalebar appearance. Now can change the color
+    - Code structure
+    - Documentation
+    - Hot keys with numbers now work only with Ctrl button
+
+ - Fixed:
+    - UI bugs
+    - String formats of messages
+    - Loosing density handler bug
+
 ### 14.12.2022
  - New features:
     - Add Density calculations (Euclidian N Cones, Nearest Neighbor mean, Yellots Rings)
