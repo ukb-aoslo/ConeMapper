@@ -10,21 +10,22 @@ classdef NNDmean < DensityMetricBase
     properties
         % for density map calculation
         Vorocones = [];
-        % average distance to neighbors expanded to map
+        % average distance to neighbors expanded to map and std map
         AvgDistanceMap = [];
+        StdDistanceMap = [];
+        % abbreviated distance maps
+        MinDistanceMap = [];
+        MaxDistanceMap = [];        
+
         % cones per hex area (2*sqrt(3) * (("cone diameter") / 2)^ 2)
         % by defenition of Voronoi, we are getting here the "small" radius of hex
         DensityMatrixConesPerAreaNotFiltered = [];
         
-        % distance between 2 cones in pixels
-        % data points correspond to set of cones:
-        %   conelocs = unique(hobj.Vorocones, 'rows', 'stable');
-        %   conelocs(conelocs(:,1) < 0, :) = [];
-        %   conelocs(conelocs(:,1) > imageWidth, :) = [];
-        %   conelocs(conelocs(:,2) < 0, :) = [];
-        %   conelocs(conelocs(:,2) > imageHeight, :) = [];
+        % lists with specific distances of respective cell towards neighbor cells
         AvgDistancesToNeighbors = [];
-        
+        StdDistancesToNeighbors = [];
+        MinDistancesToNeighbors = [];
+        MaxDistancesToNeighbors = [];
 
         % Fields defined in base class
 %         ImageHeight = 0;
@@ -68,9 +69,11 @@ classdef NNDmean < DensityMetricBase
         %   recalculates all the data for density map.
         %   - obj - the current class object.
             
-            [obj.AvgDistanceMap, obj.DensityMatrixConesPerAreaNotFiltered, obj.DensityMatrix, obj.AvgDistancesToNeighbors] = ...
+            [obj.AvgDistanceMap, obj.DensityMatrixConesPerAreaNotFiltered, obj.DensityMatrix, obj.AvgDistancesToNeighbors, ...
+              obj.MinDistanceMap, obj.MaxDistanceMap, obj.StdDistanceMap, obj.MinDistancesToNeighbors, obj.MaxDistancesToNeighbors, ...
+              obj.StdDistancesToNeighbors  ] = ...
                 NNDmean.GetDensityMatrix(obj.Vorocones, obj.ImageHeight, obj.ImageWidth);
-            
+
             [obj.PCD_cppa, obj.MinDensity_cppa, obj.PCD_loc] = NNDmean.GetMinMaxCPPA(obj.DensityMatrix);
             
             [obj.CDC20_density, obj.CDC20_loc, obj.Stats2] = NNDmean.GetCDC(obj.PCD_cppa, obj.DensityMatrix);
@@ -85,7 +88,13 @@ classdef NNDmean < DensityMetricBase
             s.AvgDistanceMap = obj.AvgDistanceMap;
             s.DensityMatrixConesPerAreaNotFiltered = obj.DensityMatrixConesPerAreaNotFiltered;
             s.AvgDistancesToNeighbors = obj.AvgDistancesToNeighbors;
-
+            s.MinDistanceMap = obj.MinDistanceMap;
+            s.MaxDistanceMap = obj.MaxDistanceMap;
+            s.StdDistanceMap = obj.StdDistanceMap;
+            s.MinDistancesToNeighbors = obj.MinDistancesToNeighbors;
+            s.MaxDistancesToNeighbors = obj.MaxDistancesToNeighbors;
+            s.StdDistancesToNeighbors = obj.StdDistancesToNeighbors;
+           
             % for PCD
             s.PCD_cppa = obj.PCD_cppa;
             s.MinDensity_cppa = obj.MinDensity_cppa;
@@ -117,6 +126,25 @@ classdef NNDmean < DensityMetricBase
                 if isfield(s,'AvgDistancesToNeighbors')
                     newObj.AvgDistancesToNeighbors = s.AvgDistancesToNeighbors;
                 end
+                if isfield(s,'MinDistanceMap')
+                    newObj.MinDistanceMap = s.MinDistanceMap;
+                end
+                if isfield(s,'MaxDistanceMap')
+                    newObj.MaxDistanceMap = s.MaxDistanceMap;
+                end
+                if isfield(s,'StdDistanceMap')
+                    newObj.StdDistanceMap = s.StdDistanceMap;
+                end
+                if isfield(s,'MinDistancesToNeighbors')
+                    newObj.MinDistancesToNeighbors = s.MinDistancesToNeighbors;
+                end
+                if isfield(s,'MaxDistancesToNeighbors')
+                    newObj.MaxDistancesToNeighbors = s.MaxDistancesToNeighbors;
+                end
+                if isfield(s,'StdDistancesToNeighbors')
+                    newObj.StdDistancesToNeighbors = s.StdDistancesToNeighbors;
+                end
+                
 
                 % for PCD
                 newObj.PCD_cppa = s.PCD_cppa;
@@ -134,7 +162,10 @@ classdef NNDmean < DensityMetricBase
             end
         end
         
-        function [densityMatrixRadial, densityMatrixArea, densityMatrixAreaFiltered, avgDistancesToNeighbors] = GetDensityMatrix(conelocs, imageHeight, imageWidth)
+        function [densityMatrixRadial, densityMatrixArea, densityMatrixAreaFiltered, avgDistancesToNeighbors, densityMatrixMin,...
+                densityMatrixMax, densityMatrixStd, minDistancesToNeighbors, maxDistancesToNeighbors, stdDistancesToNeighbors]...
+                = GetDensityMatrix(conelocs, imageHeight, imageWidth)
+
         %   densityMatrix = GetDensityMatrix(conelocs, imageHeight, imageWidth)
         %   returns a density matrix.
         %
@@ -204,14 +235,35 @@ classdef NNDmean < DensityMetricBase
                 neightborLists{indCone} = unique(neighborsTemp);
             end
             
-            % calc neighbor dists
+            % calc neighbor dists average min max and respective cell
+            % distance standard deviation
             avgDistancesToNeighbors = zeros(numberOfClosedPolygons, 1);
+            minDistancesToNeighbors = zeros(numberOfClosedPolygons, 1);
+            maxDistancesToNeighbors = zeros(numberOfClosedPolygons, 1);
+            stdDistancesToNeighbors = zeros(numberOfClosedPolygons, 1);
+
             for indCone = 1:numberOfClosedPolygons
-                avgDistancesToNeighbors(indCone) = mean(pdist2(vorocones(indCone, :), vorocones(neightborLists{indCone}, :)));
+                % calculate distances from current cell to all neighbor cells
+                neighborDistances = pdist2(vorocones(indCone, :), vorocones(neightborLists{indCone}, :));
+
+                if isempty(neighborDistances)
+                    avgDistancesToNeighbors(indCone) = NaN;
+                    minDistancesToNeighbors(indCone) = NaN;
+                    maxDistancesToNeighbors(indCone) = NaN;
+                    stdDistancesToNeighbors(indCone) = NaN;
+                else
+                    avgDistancesToNeighbors(indCone) = mean(neighborDistances);
+                    minDistancesToNeighbors(indCone) = min(neighborDistances);
+                    maxDistancesToNeighbors(indCone) = max(neighborDistances);
+                    stdDistancesToNeighbors(indCone) = std(neighborDistances);
+                end
             end
             
             % interpolate the result to get a map
             densityMatrixRadial = NNDmean.InterpolateDensityMap(conelocs, avgDistancesToNeighbors, 'nearest', [imageHeight, imageWidth]);
+            densityMatrixMin = NNDmean.InterpolateDensityMap(conelocs, minDistancesToNeighbors, 'nearest', [imageHeight, imageWidth]);
+            densityMatrixMax = NNDmean.InterpolateDensityMap(conelocs, maxDistancesToNeighbors, 'nearest', [imageHeight, imageWidth]);
+            densityMatrixStd = NNDmean.InterpolateDensityMap(conelocs, stdDistancesToNeighbors, 'nearest', [imageHeight, imageWidth]);
 
             densityMatrixArea = (densityMatrixRadial) .^2 ./ 2 .* sqrt(3);
             densityMatrixArea = 1./densityMatrixArea;
