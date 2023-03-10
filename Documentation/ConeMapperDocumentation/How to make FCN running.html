@@ -1,0 +1,45 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,IE=9,chrome=1"><meta name="generator" content="MATLAB 2022b"><title>How to make FCN running</title><style type="text/css">.rtcContent { padding: 30px; } .S0 { margin: 3px 10px 5px 4px; padding: 0px; line-height: 28.8px; min-height: 0px; white-space: pre-wrap; color: rgb(192, 76, 11); font-family: Helvetica, Arial, sans-serif; font-style: normal; font-size: 24px; font-weight: 400; text-align: left;  }
+.S1 { margin: 20px 10px 5px 4px; padding: 0px; line-height: 20px; min-height: 0px; white-space: pre-wrap; color: rgb(33, 33, 33); font-family: Helvetica, Arial, sans-serif; font-style: normal; font-size: 20px; font-weight: 700; text-align: left;  }
+.S2 { margin: 2px 10px 9px 4px; padding: 0px; line-height: 21px; min-height: 0px; white-space: pre-wrap; color: rgb(33, 33, 33); font-family: Helvetica, Arial, sans-serif; font-style: normal; font-size: 14px; font-weight: 400; text-align: left;  }
+.CodeBlock { background-color: #F5F5F5; margin: 10px 0 10px 0; }
+.S3 { border-left: 1px solid rgb(191, 191, 191); border-right: 1px solid rgb(191, 191, 191); border-top: 1px solid rgb(191, 191, 191); border-bottom: 0px none rgb(33, 33, 33); border-radius: 4px 4px 0px 0px; padding: 6px 45px 0px 13px; line-height: 18.004px; min-height: 0px; white-space: nowrap; color: rgb(33, 33, 33); font-family: Menlo, Monaco, Consolas, "Courier New", monospace; font-size: 14px;  }
+.S4 { border-left: 1px solid rgb(191, 191, 191); border-right: 1px solid rgb(191, 191, 191); border-top: 0px none rgb(33, 33, 33); border-bottom: 0px none rgb(33, 33, 33); border-radius: 0px; padding: 0px 45px 0px 13px; line-height: 18.004px; min-height: 0px; white-space: nowrap; color: rgb(33, 33, 33); font-family: Menlo, Monaco, Consolas, "Courier New", monospace; font-size: 14px;  }
+.S5 { border-left: 1px solid rgb(191, 191, 191); border-right: 1px solid rgb(191, 191, 191); border-top: 0px none rgb(33, 33, 33); border-bottom: 1px solid rgb(191, 191, 191); border-radius: 0px 0px 4px 4px; padding: 0px 45px 4px 13px; line-height: 18.004px; min-height: 0px; white-space: nowrap; color: rgb(33, 33, 33); font-family: Menlo, Monaco, Consolas, "Courier New", monospace; font-size: 14px;  }
+.S6 { margin: 10px 10px 9px 4px; padding: 0px; line-height: 21px; min-height: 0px; white-space: pre-wrap; color: rgb(33, 33, 33); font-family: Helvetica, Arial, sans-serif; font-style: normal; font-size: 14px; font-weight: 400; text-align: left;  }
+.S7 { border-left: 1px solid rgb(191, 191, 191); border-right: 1px solid rgb(191, 191, 191); border-top: 1px solid rgb(191, 191, 191); border-bottom: 1px solid rgb(191, 191, 191); border-radius: 4px; padding: 6px 45px 4px 13px; line-height: 18.004px; min-height: 0px; white-space: nowrap; color: rgb(33, 33, 33); font-family: Menlo, Monaco, Consolas, "Courier New", monospace; font-size: 14px;  }</style></head><body><div class = rtcContent><h1  class = 'S0'><span>How to make FCN running</span></h1><h2  class = 'S1'><span style=' font-weight: bold; font-family: monospace;'>Introduction</span></h2><div  class = 'S2'><span>This instruction shows the way and problems with setup FCN on Windows OS.</span></div><div  class = 'S2'><span>You must have an NVIDIA graphic card.</span></div><div  class = 'S2'><span>All steps listed here was tested with Matlab R2022b, Python 3.9.13, CUDA Toolkit v11.7</span></div><h2  class = 'S1'><span style=' font-weight: bold; font-family: monospace;'>Installation</span></h2><div  class = 'S2'><span>First step is to install Python 3.6+. With the latest Python some of the libraries can be not compatible.</span></div><div  class = 'S2'><span>With "pip install" command in terminal install the next libraries:</span></div><div class="CodeBlock"><div class="inlineWrapper"><div  class = 'S3'><span style="white-space: pre"><span >matplotlib==3.6.2</span></span></div></div><div class="inlineWrapper"><div  class = 'S4'><span style="white-space: pre"><span >numpy==1.23.5</span></span></div></div><div class="inlineWrapper"><div  class = 'S4'><span style="white-space: pre"><span >scikit_image==0.19.3</span></span></div></div><div class="inlineWrapper"><div  class = 'S4'><span style="white-space: pre"><span >scikit_learn==1.2.1</span></span></div></div><div class="inlineWrapper"><div  class = 'S4'><span style="white-space: pre"><span >scipy==1.10.0</span></span></div></div><div class="inlineWrapper"><div  class = 'S4'><span style="white-space: pre"><span >tqdm==4.64.1</span></span></div></div><div class="inlineWrapper"><div  class = 'S5'><span style="white-space: pre"><span >tensorboard==2.11.2</span></span></div></div></div><div  class = 'S6'><span>For the pytorch library, use the next command:</span></div><div class="CodeBlock"><div class="inlineWrapper"><div  class = 'S7'><span style="white-space: pre"><span >pip </span><span style="color: rgb(167, 9, 245);">install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu117</span></span></div></div></div><div  class = 'S6'><span></span></div><div  class = 'S2'><span>That is it. Now it should work.</span></div>
+<br>
+<!-- 
+##### SOURCE BEGIN #####
+%% How to make FCN running
+%% |*Introduction*|
+% This instruction shows the way and problems with setup FCN on Windows OS.
+% 
+% You must have an NVIDIA graphic card.
+% 
+% All steps listed here was tested with Matlab R2022b, Python 3.9.13, CUDA Toolkit 
+% v11.7
+%% |*Installation*|
+% First step is to install Python 3.6+. With the latest Python some of the libraries 
+% can be not compatible.
+% 
+% With "pip install" command in terminal install the next libraries:
+
+matplotlib==3.6.2
+numpy==1.23.5
+scikit_image==0.19.3
+scikit_learn==1.2.1
+scipy==1.10.0
+tqdm==4.64.1
+tensorboard==2.11.2
+%% 
+% For the pytorch library, use the next command:
+
+pip install torch torchvision torchaudio REPLACE_WITH_DASH_DASHextra-index-url https://download.pytorch.org/whl/cu117
+%% 
+% 
+% 
+% That is it. Now it should work.
+##### SOURCE END #####
+-->
+</div></body></html>
