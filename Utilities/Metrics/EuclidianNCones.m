@@ -217,15 +217,17 @@ classdef EuclidianNCones < DensityMetricBase
                     % get indexes of cones with the smallest distances to current
                     % pixel
                     distIDXsorted = originalColumnIndexes(:, coorX - pixelStartX + 1);
-                    smallestIdx =  distIDXsorted(1:numOfNearestCones);
+                    smallestIdx =  distIDXsorted(1:min([numOfNearestCones, length(distIDXsorted)]));
                     
                     isBoundingPolyPoint = ismember(smallestIdx, boundingPoly);
                     
+                    availiableCones = numOfNearestCones;
                     % if there is at list one cone with extremly big area
                     if any(isBoundingPolyPoint)
                         isBoundingPolyPoint = ismember(distIDXsorted, boundingPoly);
                         distIDXsorted = distIDXsorted(~isBoundingPolyPoint);
-                        smallestIdx =  distIDXsorted(1:numOfNearestCones);
+                        availiableCones = min([numOfNearestCones, length(distIDXsorted)]);
+                        smallestIdx =  distIDXsorted(1:availiableCones);
                     else
                         goodPointsMap(coorY, coorX) = 1;
                     end
@@ -237,7 +239,7 @@ classdef EuclidianNCones < DensityMetricBase
                     densityAreaVoronois = sum(areaNearestVoronois);
                     % get density as number of cones divided by area they cover
                     % cppa - cones per pixel area
-                    densityMatrix(coorY, coorX) = numOfNearestCones / densityAreaVoronois;                    
+                    densityMatrix(coorY, coorX) = availiableCones / densityAreaVoronois;                    
                 end                                        % end of coorX loop
 
                 waitbar((coorY - pixelStartY) / nSteps)
@@ -279,6 +281,11 @@ classdef EuclidianNCones < DensityMetricBase
             conesInsideMap = find(BWMap == 2);
             % get normal coordinates of that cones
             [row,col] = ind2sub([rows, cols], conesInsideMap);
+            
+            if isempty(conesInsideMap)
+                row = conelocs(:, 2);
+                col = conelocs(:, 1);
+            end
             
             % find a boundary of the set
             boundingPoly = boundary(col, row, shrinkFactor);

@@ -29,6 +29,7 @@ classdef scalebar <handle
 		hLineY %SCALE-Y-LINE, L&H
 		hTextX %SCALE-X-LABEL
 		hTextY %SCALE-Y-LABEL
+%         hBackground     %Transparent Patch
         hAxes
 	end
 	properties (SetObservable=true)
@@ -43,8 +44,10 @@ classdef scalebar <handle
 		hTextY_Pos            %SCALE-Y-LABEL-POSITION
 		hTextY_Rot=90         %SCALE-Y-LABEL-ROTATION
         Visible = 'on';
+        Color = [1 1 1];
 
-        PixelsPerDergree = 600;
+        ImageMagnificationFactor = 600;
+        RMF = NaN;
 	end
 	methods
 		function hobj = scalebar(varargin)                        
@@ -64,7 +67,7 @@ classdef scalebar <handle
             
             %listen to Prop change
             for prop={'XLen','YLen','XUnit','YUnit','hTextY_Rot'...
-                      'Position','Border','hTextX_Pos','hTextY_Pos', 'Visible'}
+                      'Position','Border','hTextX_Pos','hTextY_Pos', 'Visible', 'Color'}
                 funstr = eval(['@hobj.Set',prop{1}]);
                 addlistener(hobj,prop{1},'PostSet',funstr);
             end
@@ -79,8 +82,16 @@ classdef scalebar <handle
             hobj.hLineX = [copy(templine), templine];
 			hobj.hLineY = [copy(templine), copy(templine)];
             set([hobj.hLineY, hobj.hLineX], 'Parent',hobj.hAxes,'ButtonDownFcn',@hobj.FcnStartDrag); 
-			hobj.hTextX = text(0,0,'','Parent',hobj.hAxes,'ButtonDownFcn',@hobj.FcnStartDrag);
-			hobj.hTextY = text(0,0,'','Parent',hobj.hAxes,'Rotation',90,'ButtonDownFcn',@hobj.FcnStartDrag);
+			hobj.hTextX = text(0,0,'','Parent',hobj.hAxes,'HorizontalAlignment','center', 'ButtonDownFcn',@hobj.FcnStartDrag);
+            hobj.hTextX.FontName = 'Helvetica';
+            hobj.hTextX.FontWeight = 'bold';
+			hobj.hTextY = text(0,0,'','Parent',hobj.hAxes,'Rotation',90, 'HorizontalAlignment','center', 'ButtonDownFcn',@hobj.FcnStartDrag);
+            hobj.hTextY.FontName = 'Helvetica';
+            hobj.hTextY.FontWeight = 'bold';
+%             v1 = [2 4; 2 8; 8 8; 8 4];
+%             f1 = [1 2 3 4];
+%             hobj.hBackground = patch('Faces',f1,'Vertices',v1,'FaceColor', [1, 1, 1], 'FaceAlpha',0.8);
+
             
             %UIMENU for RITHT-CLICK
             hcmenu = uicontextmenu;
@@ -113,6 +124,7 @@ classdef scalebar <handle
             p.addParameter('hTextY_Pos',0.02*[-axisXWidth, axisYWidth]);
             p.addParameter('hTextY_Rot',hobj.hTextY_Rot);
             p.addParameter('Visible', hobj.Visible);
+            p.addParameter('Color', [1 1 1]);
             if isempty(varargin) %scalebar() 
                 p.parse();
             elseif ~ishandle(varargin{1}) %scalebar('Prop','Value')
@@ -122,7 +134,7 @@ classdef scalebar <handle
             end
 			%default settings
             for prop={'XLen','YLen','XUnit','YUnit','hTextY_Rot',...
-                      'Position','Border','hTextX_Pos','hTextY_Pos', 'Visible'}
+                      'Position','Border','hTextX_Pos','hTextY_Pos', 'Visible', 'Color'}
                 hobj.(prop{1}) = p.Results.(prop{1});
             end
         end
@@ -163,15 +175,14 @@ classdef scalebar <handle
 	methods
 	% Setting properties
         function SetVisible(hobj, varargin)
- 			
             onOff = hobj.Visible;
 			set(hobj.hLineX(1), 'Visible', onOff);
 			set(hobj.hTextX, 'Visible', onOff);
+%             set(hobj.hBackground, 'Visible', onOff);
             
             set(hobj.hLineX(2), 'Visible', 'off');
             set(hobj.hLineY, 'Visible', 'off');
  			set(hobj.hTextY, 'Visible', 'off');
-            
         end
 		function SetPosition(hobj, varargin)
             value = hobj.Position;
@@ -185,6 +196,8 @@ classdef scalebar <handle
 			set(hobj.hLineX, 'XData', XPos+[0 hobj.XLen]);
 			set(hobj.hTextX, 'Position', [hobj.hTextX_Pos+value, 0]);
 			set(hobj.hTextY, 'Position', [hobj.hTextY_Pos+value, 0]);
+
+%             UpdateBackgroundPosition(hobj);
 		end
 		function SethTextX_Pos(hobj, varargin)
             value = hobj.hTextX_Pos;
@@ -221,6 +234,15 @@ classdef scalebar <handle
 		end
 		function SetXLen(hobj, varargin)
             value = hobj.XLen;
+            valueUnit = hobj.XUnit;
+            scaleCoefficient = GetScaleCoefficient(valueUnit, hobj.ImageMagnificationFactor, hobj.RMF);
+            
+            if ~isnan(scaleCoefficient)
+                value = value * scaleCoefficient;
+                value = round(value, GetRoundNumber(value)) / scaleCoefficient;
+            end
+
+            hobj.XLen = value;
 			XPos = hobj.Position(1);
 			set(hobj.hLineX, 'XData', XPos+[0 value]);
 			set(hobj.hLineY(2), 'XData', XPos*[1 1]+value);
@@ -236,7 +258,7 @@ classdef scalebar <handle
 		function SetXUnit(hobj,  varargin)
             value = hobj.XUnit;
             if ishandle(hobj.hTextX)
-                scaleCoefficient = GetScaleCoefficient(value, hobj.PixelsPerDergree);
+                scaleCoefficient = GetScaleCoefficient(value, hobj.ImageMagnificationFactor, hobj.RMF);
                 set(hobj.hTextX, 'String', ...
                     sprintf([GetFormatStringByUnit(value), value], hobj.XLen * scaleCoefficient));
 
@@ -245,11 +267,35 @@ classdef scalebar <handle
 		function SetYUnit(hobj,  varargin)
             value = hobj.YUnit;
             if ishandle(hobj.hTextY)
-                scaleCoefficient = GetScaleCoefficient(value, hobj.PixelsPerDergree);
+                scaleCoefficient = GetScaleCoefficient(value, hobj.ImageMagnificationFactor, hobj.RMF);
                 set(hobj.hTextY, 'String',  ...
                     sprintf([GetFormatStringByUnit(value), value], hobj.YLen * scaleCoefficient));
             end
         end
+        
+        function SetColor(hobj, varargin)
+            color = hobj.Color;
+            set(hobj.hLineX, 'Color', color);
+            set(hobj.hLineY, 'Color', color);
+            set(hobj.hTextX, 'Color', color);
+            set(hobj.hTextY, 'Color', color);
+        end
+
+%         function UpdateBackgroundPosition(hObj, varargin)
+%             minX = min([hObj.hLineX(1).XData, hObj.hTextX.Position(1)]);
+%             maxX = max([hObj.hLineX(1).XData, hObj.hTextX.Position(1)]);
+%             minY = min([hObj.hLineX(1).YData, hObj.hTextX.Position(2)]);
+%             maxY = max([hObj.hLineX(1).YData, hObj.hTextX.Position(2)]);
+%             xSize = maxX - minX;
+%             ySize = maxY - minY;
+%             minX = minX - xSize * 0.05;
+%             minY = minY - ySize;
+%             maxY = maxY + ySize * 0.4;
+%             maxX = maxX + xSize * 0.05;
+%             v1 = [minX minY; minX maxY; maxX maxY; maxX minY];
+%             
+%             set(hObj.hBackground,'Vertices',v1);
+%         end
 	end
 	methods (Access = private)
 	%GUI dynamic drag
@@ -295,16 +341,29 @@ end
 
 function formatString = GetFormatStringByUnit(unit)
     switch unit
-        case {'pixel', 'px', '', 'arcsec'}
-            formatString = '%5.0f ';
+        case {'pixel', 'px', '', 'arcsec', 'arcmin', 'degree', 'deg'}
+            formatString = '%g ';
 
-        case 'arcmin'
-            formatString = '%5.2f ';
-
-        case {'degree', 'deg'}
-            formatString = '%6.4f ';
+        case {'micrometer', 'µm', 'millimeter', 'mm'}
+            formatString = '%g ';
 
         otherwise
             error(["Unknown unit: ", unit]);
+    end
+end
+
+function roundingNumber = GetRoundNumber(value)
+    if value < 0.0001
+        roundingNumber = 5;
+    elseif value < 0.001
+        roundingNumber = 4;
+    elseif value < 0.01
+        roundingNumber = 3;
+    elseif value < 0.1
+        roundingNumber = 2;
+    elseif value < 1
+        roundingNumber = 1;
+    else
+        roundingNumber = 0;
     end
 end

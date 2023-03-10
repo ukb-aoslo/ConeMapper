@@ -1,4 +1,4 @@
-function [conelocs] = RunCNNnewSet_automatic(DataSet, ImageDir, boxposition, I, cnnCalcType, cnnFloderName)
+function [conelocs, success] = RunCNNnewSet_automatic(DataSet, ImageDir, I, cnnFloderName)
 % function for implementation of UNTITLED2 Summary of this function goes here
 %%%% marked lines were originally desiged for adjusting arguments/values in this script 
 
@@ -14,33 +14,40 @@ function [conelocs] = RunCNNnewSet_automatic(DataSet, ImageDir, boxposition, I, 
 % network and parameters
 
 
-disp(strcat('Set-up MatConVNet. Folder: ', cnnFloderName, '. Type: ', cnnCalcType));
-% Set-up MatConVNetPaths
-BasePath = GetRootPath();
-% BasePath = 'C:\Users\Jenny\Documents\MATLAB\CNN-Cone-Detection';
-MatConvNetPath = fullfile(BasePath, cnnFloderName);
-run(fullfile(MatConvNetPath,'matlab','vl_setupnn.m'))
+    disp(strcat('Set-up MatConVNet. Folder: ', cnnFloderName));
+    % Set-up MatConVNetPaths
+    BasePath = GetRootPath();
+    % BasePath = 'C:\Users\Jenny\Documents\MATLAB\CNN-Cone-Detection';
+    MatConvNetPath = fullfile(BasePath, cnnFloderName);
+    run(fullfile(MatConvNetPath,'matlab','vl_setupnn.m'))
+    
+    % choose dataset with already trained cnn and detection parameters
+    % DataSet = 'confocal'; % original cases: 'confocal' or 'split detector'
+    %%%% DataSet = '14111';
+    % load in parameters
+    disp('load in parameters');
+    params = get_parameters_Cone_CNN(DataSet);
+    
+    types = {'gpu', 'cpu'};
+    success = true;
+    for ind = 1:length(types)
+        cnnCalcType = types{ind};
+        try
+            % find all waitbars
+            F = findall(0, 'type', 'figure', 'tag', 'TMWWaitbar');
+            close(F);
 
-% choose dataset with already trained cnn and detection parameters
-% DataSet = 'confocal'; % original cases: 'confocal' or 'split detector'
-%%%% DataSet = '14111';
-% load in parameters
-disp('load in parameters');
-params = get_parameters_Cone_CNN(DataSet);
+            disp(strcat('Trying type: ', cnnCalcType));
+            [conelocs] = SaveNewSetCones_automatic(params, ImageDir, I, cnnCalcType);
+            success = true;
+        catch ME
+            conelocs = [];
+            success = false;
+            disp(ME.message)
+        end
 
- 
-% Choose Folder of images to detect cones in
-%%%% ImageDir =  'C:\Users\Jenny\Documents\MATLAB\CNN-Cone-Detection\Images and Results\Confocal\Test Images_150';
-
-% format of images (must be readable by imread, must be 2D/grayscale format)
-ImExtension = '.tif';
-
-% Choose Folder to save coordinate
-%%%% SaveDir = 'C:\Users\Jenny\Documents\MATLAB\CNN-Cone-Detection\Images and Results\Confocal\Test CNNcoord 42';
-
- 
-%  SaveNewSetCones_automatic(params,ImageDir,ImExtension,SaveDir)
-[conelocs] = SaveNewSetCones_automatic(params,ImageDir,ImExtension,boxposition,I, cnnCalcType);
-
+        if success
+            break;
+        end
+    end
 end
-
