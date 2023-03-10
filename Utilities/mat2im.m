@@ -1,4 +1,4 @@
-function im=mat2im(mat,cmap,limits)
+function [im, varargout] = mat2im(mat,cmap,limits)
 % mat2im - convert to rgb image
 %
 % function im=mat2im(mat,cmap,maxVal)
@@ -74,10 +74,13 @@ if nargin==3
     if isnan(maxVal), maxVal=max(mat(:)); end
     mat(mat>maxVal)=maxVal;        
 else
-minVal=min(mat(:));
-maxVal=max(mat(:));
+    minVal=min(mat(:));
+    maxVal=max(mat(:));
 end
 
+if nargout > 1
+    varargout{1} = [minVal, maxVal];
+end
 
 %Normalise 
 mat=mat-minVal;
