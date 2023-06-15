@@ -2,6 +2,8 @@ import numpy as np
 import torch
 import os
 
+from utils.image import get_mask
+
 def get_circular_mask(height, width, center_y, center_x, distance_min, distance_max, tensor=False):
     """
     Get a circular mask centered at (center_y, center_x)
@@ -48,6 +50,29 @@ def get_maximum_extent(height, width, center_y, center_x, pixels_per_degree):
     """
     d = np.min([center_x, width - center_x, center_y, height - center_y])
     return pixels_to_arcmin(pixels_per_degree, d)
+
+def get_maximum_extent_from_bounding_box(image, center_y, center_x, pixels_per_degree):
+    """
+    Get the maximum extent possible given
+    the specified center AND a bounding box 
+    around the AOSLO montage
+    """
+    ll, hh = get_bounding_box(image)
+    height = hh[0] - ll[0]
+    width = hh[1] - ll[1]
+    #print(ll, hh, height, width)
+    return get_maximum_extent(height, width, center_y - ll[0], center_x - ll[1], pixels_per_degree)
+
+def get_bounding_box(image, threshold=1/255.0):
+    """
+    Get a bounding box of the AOSLO montage
+    """
+    mask = get_mask(image, threshold=threshold)
+    y = np.where(np.sum(mask, axis=1) > 0)[0]
+    x = np.where(np.sum(mask, axis=0) > 0)[0]
+    min_y, max_y = y[0], y[-1]
+    min_x, max_x = x[0], x[-1]
+    return (min_y, min_x), (max_y, max_x)
 
 def read_cdc(path, filename="cdc20.csv"):
     """

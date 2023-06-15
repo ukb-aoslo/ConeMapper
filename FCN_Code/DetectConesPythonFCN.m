@@ -23,7 +23,7 @@ function [data, probMap, res] = DetectConesPythonFCN(image1, path)
     path = pathes(1).folder;
 
     % create waitbar
-    wb = waitbar(0, 'Your Message Here');
+    wb = waitbar(0, 'FCN is running. Please, wait...');
     % get all children (including hidden)
     wbch = allchild(wb);
     % do Java magic
@@ -48,7 +48,7 @@ function [data, probMap, res] = DetectConesPythonFCN(image1, path)
 
     % run script
     [ouptut, out2, res] = pyrunfile(...
-        ['detect.py ', pathToImage, ' -t DT -o ', folderPath, ' -matlab'],...
+        ['detect.py ', pathToImage, ' -o ', folderPath, ' -matlab'],...
         ["output_path_image", "output_path", "result"]);
     
     if res

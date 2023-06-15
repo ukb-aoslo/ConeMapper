@@ -3,6 +3,7 @@ import numpy as np
 from skimage.io import imread
 import matplotlib.pyplot as plt
 from scipy import ndimage
+import scipy.signal as sig
 
 def get_mask(image : np.ndarray, threshold = 1/255.0):
     """
@@ -88,6 +89,79 @@ def mark_cones(image : np.ndarray, mask : np.ndarray):
     color_image[2,mask == 1] = 0
     return color_image.transpose(1,2,0)
 
+def get_distance_mask(shape, center_y, center_x, center_value, increase_per_pixel=0.005, fit_to=None, pixels_per_degree=600):
+    """
+    Get a distance mask to be used in post-processing
+
+    fit_to: Array of mean distances between cones per arcminute
+    """
+    dx, dy = np.meshgrid(np.arange(shape[1]), np.arange(shape[0]))
+    dx = dx - center_x
+    dy = dy - center_y
+    dist = np.sqrt(dx ** 2 + dy ** 2)
+
+    if fit_to is not None:
+        dist = (dist / pixels_per_degree * 60).astype(int)
+        dist[dist >= len(fit_to)] = len(fit_to) - 1
+        # Distance should be 0.5 of the mean distance between cones
+        dist = fit_to[dist]
+        return dist
+    else:
+        factor = 1.0 / increase_per_pixel
+        dist = dist / factor
+        dist = center_value + dist
+        return dist
+
+def mark_tp_fp_fn_grid(image : np.ndarray, tp : np.ndarray, fp : np.ndarray, fn : np.ndarray):
+    """
+    Mark TP, FP and FN in an image. TP, FP, FN are given as a grid of the
+    same shape.
+    """
+    cmax = np.max(image) # Handle uint and float arrays
+    color_image = np.stack([image, image, image])
+
+    # Mark TP green
+    color_image[0,tp == 1] = 0
+    color_image[1,tp == 1] = cmax
+    color_image[2,tp == 1] = 0
+
+    # Mark FP red
+    color_image[0,fp == 1] = cmax
+    color_image[1,fp == 1] = 0
+    color_image[2,fp == 1] = 0
+
+    # Mark FN blue
+    color_image[0,fn == 1] = 0
+    color_image[1,fn == 1] = 0
+    color_image[2,fn == 1] = cmax
+
+    return color_image.transpose(1,2,0)
+
+def mark_tp_fp_fn_coordinates(image : np.ndarray, tp : np.ndarray, fp : np.ndarray, fn : np.ndarray):
+    """
+    Mark TP, FP and FN in an image. TP, FP, FN are given as coordinates.
+    """
+    cmax = np.max(image) # Handle uint and float arrays
+    color_image = np.stack([image, image, image])
+
+    tp = np.round(tp).astype(int)
+    fp = np.round(fp).astype(int)
+    fn = np.round(fn).astype(int)
+
+    # Mark TP green
+    for (y,x) in tp:
+        color_image[:,y,x] = np.array([0, cmax, 0])
+
+    # Mark FP red
+    for (y,x) in fp:
+        color_image[:,y,x] = np.array([cmax, 0, 0])
+
+    # Mark FN blue
+    for (y,x) in fn:
+        color_image[:,y,x] = np.array([0, 0, cmax])
+
+    return color_image.transpose(1,2,0)
+
 def show_image(image : np.ndarray):
     """
     Show an image using matplotlib.pyplot
@@ -108,3 +182,20 @@ def dt_to_class(image : np.ndarray):
     (background <> cone) representation
     """
     return np.uint8(image == 0)
+
+def class_to_gaussians(image : np.ndarray, weighting : np.ndarray = None):
+    """
+    Convert binary class (background <> cone) to 
+    a map of gaussian blobs
+    """
+    k, sigma = 7, 1.0
+    ax = np.linspace(-(k - 1) / 2., (k - 1) / 2., k)
+    gauss = np.exp(-0.5 * np.square(ax) / np.square(sigma))
+    kernel = np.outer(gauss, gauss)
+    kernel = kernel / np.sum(kernel)
+    filtered = sig.convolve2d(image, kernel, mode="same")
+
+    if weighting is not None:
+        filtered = filtered * weighting
+    
+    return filtered

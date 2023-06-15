@@ -2,17 +2,16 @@ import numpy as np
 import csv
 
 from components.fcn import FCN
-from components.postprocessing import naive_postprocessing, hamwoods_postprocessing, particle_postprocessing
+from components.postprocessing import coordinates_to_mask, minimum_postprocessing
 
-from utils.image import clip_image, read_image, mark_cones, show_image, erode_image, tensor_to_image, image_to_tensor, mask_array
+from utils.particles import ParticleBasedPostProcessing
+from utils.image import clip_image, read_image, erode_image, tensor_to_image, image_to_tensor, mask_array 
 
 import matplotlib.pyplot as plt
 import argparse
 import pathlib
-import os
 
-
-def detect(image : np.ndarray, mode : str, postprocessing : str):
+def detect(image : np.ndarray, mode : str = "DT", postprocessing : str = "PBPP"):
     """
     Detect cones in an retinal image
 
@@ -20,7 +19,7 @@ def detect(image : np.ndarray, mode : str, postprocessing : str):
 
     mode: currently only 'DT'
 
-    postprocessing: choose 'naive', or 'hamwood'
+    postprocessing: current only 'PBPP'
 
     Returns a 2D array of cone locations
     """
@@ -31,13 +30,12 @@ def detect(image : np.ndarray, mode : str, postprocessing : str):
 
     if mode.upper() == "DT":
         fcn = FCN(None, lr=3e-4, depth=3, input_channels=1, initial_feature_maps=32, blocks_per_resolution_layer=2, use_MSE_loss=True, masked_MSE_loss=True)
-        fcn.load("pretrained_models/5-fold-eroded-excluded_BAK8095L-DT-0.24.pth")
-        threshold = 1.5 # Should be reasonable given the model's performance
+        fcn.load("pretrained_models/DT-0.16-dilation-1-300-epochs.pth")
     else:
         raise "Unknown mode"
 
     # Feed forward
-    image = fcn.prepare_data(image).unsqueeze(0).unsqueeze(0)
+    image = image_to_tensor(image).to(fcn.device)
     pred = fcn(image)[0,0,:,:].detach().cpu()
     image = image.detach().cpu()
 
@@ -45,17 +43,27 @@ def detect(image : np.ndarray, mode : str, postprocessing : str):
     pred = tensor_to_image(pred)
     image = tensor_to_image(image)
 
-    # Post-processing
-    if postprocessing.upper() == "NAIVE":
-        pred = mask_array(pred, image, better_mask=True, fill=threshold + 1)
-        # TODO add pos return
-        mask = naive_postprocessing(pred, threshold)
+    if postprocessing.upper() == "PBPP":
+        # Extract local minima
+        pred = mask_array(pred, image, better_mask=True, fill=1) # 0 in DT denotes cone!
+        proc = minimum_postprocessing(pred, verbose=True, return_coordinates=True)
+        pred = mask_array(pred, image, better_mask=True, fill=0) # Undo masking with 1
 
-    if postprocessing.upper() == "HAMWOOD":
-        pred = mask_array(pred, image, better_mask=True, fill=1)
-        mask, pos = hamwoods_postprocessing(pred, threshold, verbose=True)
+        # Particle-based post-processing
+        step_size = 0.1 #0.1 #0.2 #0.05
+        alpha = 0.6 #0.75 #0.6 #0.8 #0.4
+        beta = 1.0
+        gamma = 1.0
+        loops = 3 #3 #4 #5 #3
+        steps = 8 #8 #10
+        pbpp = ParticleBasedPostProcessing(proc, pred, image, None, alpha, beta, gamma, step_size, interpolation_mode="fast_quintic_b_splines")
+        pbpp.postprocess(loops=loops, steps=steps, progress_bar=True, verbose=False, add_particles=True, remove_particles=True) #progress_bar=False, verbose=True)
 
-    return mask, pred, pos
+        cones = pbpp.particles.positions
+    else:
+        raise "Unknown postprocessing"
+
+    return cones, pred
 
 def create_parser():
     """
@@ -63,40 +71,32 @@ def create_parser():
     """
     parser = argparse.ArgumentParser()
     parser.add_argument('input', type=str, help = "Input image")
-    parser.add_argument("-t", "--type", help = "Type of NN. Possible types: WBCE, DT, DAFL")
     parser.add_argument("-o", "--output", type=str, help = "Output path")
     parser.add_argument("-matlab", help = "Save coordinates in matlab format", required = False, action='store_true')
 
     return parser
 
 if __name__ == "__main__":
-    # image_path = "data/test_image_big.png"
-    # image = read_image(image_path)
-
-    # image_path = "data/BAK8044L.npz"
-    # after_load = np.load(image_path)
-    # image = after_load["image"] / 255.0
-    # print(after_load["label"])
-    #print(after_load["cdc20"])
-    # show_image(after_load["background_probability"])
-    # show_image(after_load["cone_probability"])
-
     # parse args
     parser = create_parser()
     args = parser.parse_args()
     
     try:
+        # Get image from .npz file
+        # image_path = "data/BAK1012L.npz"
+        # image = np.load(image_path)["image"] / 255.0
+
         # open image
         image = read_image(args.input)
 
         print("Clipping...")
-        image = clip_image(image)
+        image = clip_image(image, clipping_factor=8)
 
         print("Eroding...")
-        image, _ = erode_image(image)
+        image, applied = erode_image(image)
 
         print("Detecting and Post-Processing...")
-        cones, raw, cone_pos = detect(image, mode="DT", postprocessing="HAMWOOD") 
+        cones, raw = detect(image, mode="DT", postprocessing="PBPP")
 
     except Exception as e:
         print(e)
@@ -110,7 +110,7 @@ if __name__ == "__main__":
         plt.imsave(output_path_image, raw, cmap='Greys')
 
         # save coords
-        coordList = cone_pos
+        coordList = cones
         if args.matlab:
             for i in range(len(coordList)):
                 coordList[i] = [coordList[i][1] + 1, coordList[i][0] + 1]
@@ -126,8 +126,7 @@ if __name__ == "__main__":
 
     # cones = mask_array(cones, image, better_mask=True, fill=0)
 
-    # print("Marking result...")
-    # result = mark_cones(image, cones)
-
-    # show_image(raw)
-    # show_image(result)
+    # print("Showing detected cones...")
+    # plt.imshow(image, cmap="gray", vmin=0, vmax=1, interpolation="nearest")
+    # plt.scatter(cones[:,1], cones[:,0], c="purple", s=1, marker=".")
+    # plt.show()

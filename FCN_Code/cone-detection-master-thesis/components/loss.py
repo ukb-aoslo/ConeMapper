@@ -53,7 +53,7 @@ class MaskedMSELoss(nn.Module):
         self.better_mask = better_mask
 
     # labels = (B,1,H,W)
-    def forward(self, image, prediction, label):
+    def forward(self, image, prediction, label, background_probability = None, cone_probability = None):
         if self.better_mask:
             # Compute mask by flooding from all 4 sides
             top = torch.cumsum(image, 2) < self.threshold
@@ -65,6 +65,28 @@ class MaskedMSELoss(nn.Module):
         else:
             # Just exclude all black pixels
             mask = (image >= self.threshold).float()  
+
+        # Optional class imbalance weighting
+        if background_probability is not None and cone_probability is not None:
+            # Compute inverse of probablity
+            #inv_background_probability = 1.0 / background_probability
+            #inv_cone_probability = 1.0 / cone_probability
+
+            # Normalize
+            #inv_cone_probability, inv_background_probability = inv_cone_probability / (inv_cone_probability + inv_background_probability), inv_background_probability / (inv_cone_probability + inv_background_probability)
+            
+            # Previous weighting was too intense, so let's use this version instead
+            inv_cone_probability = 1.0 + cone_probability.item() # should be ca. 1.02
+            inv_background_probability = background_probability.item() # should be ca. 0.98
+
+            # Create weightings
+            binary_label = 1.0 * (label == 0)
+            binary_label[binary_label == 1] = inv_cone_probability
+            binary_label[binary_label == 0] = inv_background_probability
+
+            # Apply weigthings
+            #print(mask.dtype, label.dtype, binary_label.dtype)
+            mask = mask * binary_label
         
         # Compute and return loss 
         prediction = prediction * mask

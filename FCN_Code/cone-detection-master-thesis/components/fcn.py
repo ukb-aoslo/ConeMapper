@@ -12,11 +12,12 @@ from tqdm import tqdm
 
 from torchvision import models
 
-from components.postprocessing import evaluate, _locations_to_mask
+#from components.postprocessing import evaluate, coordinates_to_mask
 from components.loss import DistanceAwareFocalLoss, MaskedMSELoss
 
 from utils.cdc import arcmin_to_pixels, get_circular_mask, get_maximum_extent, pixels_to_arcmin
 from utils.image import clip_image
+from utils.transforms import LabelRegularityTransform, DistanceTransform
 
 class FCN(nn.Module):
     """
@@ -25,13 +26,14 @@ class FCN(nn.Module):
     'Automatic Detection of Cone Photoreceptors With Fully Convolutional Networks' (Hamwood et al., 2019)
     """
 
-    def __init__(self, train_dataloader, validation_dataloader=None, test_dataloader=None, lr=0.001, depth=3, input_channels=1, initial_feature_maps=16, use_class_weights=True,
-                blocks_per_resolution_layer=1, use_MSE_loss=False, masked_MSE_loss=False, use_distance_aware_focal_loss=False):
+    def __init__(self, train_dataloader, validation_dataloader=None, test_dataloader=None, lr=0.001, depth=3, input_channels=1, initial_feature_maps=16, use_class_weights=False,
+                blocks_per_resolution_layer=1, use_MSE_loss=False, masked_MSE_loss=False, use_distance_aware_focal_loss=False, regularity_aware_training=False,
+                use_distance_information=False, use_refiner=False, use_lr_scheduler=False):
         super(FCN, self).__init__()
 
         # Set properties
         self.depth = depth
-        self.scaling_factor = 2
+        # self.scaling_factor = 2
         self.feature_maps_factor = 2
         self.input_channels = input_channels
         self.initial_feature_maps = initial_feature_maps
@@ -42,10 +44,24 @@ class FCN(nn.Module):
         self.use_MSE_loss = use_MSE_loss
         self.masked_MSE_loss = masked_MSE_loss
         self.use_distance_aware_focal_loss = use_distance_aware_focal_loss
+        self.use_class_weights = use_class_weights
+        self.regularity_aware_training = regularity_aware_training
+        self.use_distance_information = use_distance_information
+        self.use_refiner = use_refiner
+        self.use_lr_scheduler = use_lr_scheduler
+
+        # Set some properties based on other properties
+        if self.regularity_aware_training:
+            self.input_channels = 2
+            self.label_modifier = LabelRegularityTransform(tpr=0.98, fdr=0.005, cone_probability=0.02)
+            self.dt_modifier = DistanceTransform()
+
+        if self.use_distance_information:
+            self.input_channels = 2
 
         # Computed parameters
-        self.feature_maps = [input_channels]
-        self.feature_maps.extend([self.initial_feature_maps * self.feature_maps_factor ** d for d in range(0,self.depth+1)])
+        self.feature_maps = [self.input_channels]
+        self.feature_maps.extend([int(self.initial_feature_maps * self.feature_maps_factor ** d) for d in range(0,self.depth+1)])
         self.skip_connections_values = []
 
         # Select device
@@ -57,6 +73,7 @@ class FCN(nn.Module):
         self.skip_connections = nn.ModuleList()
         self.center_blocks = nn.ModuleList()
         self.decoder = nn.ModuleList()
+        self.refiner = nn.ModuleList()
         self.predictor = nn.ModuleList()
         self.transfer_model = nn.ModuleList()
         
@@ -109,6 +126,22 @@ class FCN(nn.Module):
                 self.decoder.append(nn.BatchNorm2d(self.feature_maps[i-1]))
                 self.decoder.append(nn.ReLU())
 
+        # Add some more layers to predictor if necessary
+        if self.use_refiner:
+            # Pyramidal Convolution - https://arxiv.org/abs/2006.11538
+            self.refiner.append(nn.Conv2d(self.feature_maps[1], self.feature_maps[1], (1,1)))
+            self.refiner.append(nn.BatchNorm2d(self.feature_maps[1]))
+            self.refiner.append(nn.ReLU())
+
+            self.refiner.append(nn.Conv2d(self.feature_maps[1], self.feature_maps[1], (9,9), padding=(4,4)))
+            self.refiner.append(nn.Conv2d(self.feature_maps[1], self.feature_maps[1], (7,7), padding=(3,3)))
+            self.refiner.append(nn.Conv2d(self.feature_maps[1], self.feature_maps[1], (5,5), padding=(2,2)))
+            self.refiner.append(nn.Conv2d(self.feature_maps[1], self.feature_maps[1], (3,3), padding=(1,1)))
+
+            self.refiner.append(nn.BatchNorm2d(self.feature_maps[1] * 4))
+            self.refiner.append(nn.ReLU())
+            self.refiner.append(nn.Conv2d(self.feature_maps[1] * 4, self.feature_maps[1], (1,1)))
+
         # Add blocks to the predictor
         self.predictor.append(nn.Conv2d(self.feature_maps[1], 2, (1,1)))
 
@@ -140,6 +173,9 @@ class FCN(nn.Module):
                 self.criterion = nn.CrossEntropyLoss(weight=class_weights, reduction='mean') #FCN.custom_loss #nn.CrossEntropyLoss()  #nn.MSELoss()          
 
         self.optimizer = optim.Adam(self.parameters(), lr=self.lr)
+        if self.use_lr_scheduler:
+            #self.scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, mode="min", patience=5)
+            self.scheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=50, gamma=0.5)
 
     def forward(self, x):
         """
@@ -170,6 +206,15 @@ class FCN(nn.Module):
                 #print(self.skip_connections_values[slip_depth].shape)
                 x = torch.cat([x, self.skip_connections_values[slip_depth]], dim=1)
                 slip_depth -= 1
+        
+        # Refiner (Pyramid convolution)
+        if self.use_refiner:
+            for idx in range(3):
+                x = self.refiner[idx](x)
+            refined = [self.refiner[idx](x) for idx in range(3,7)]
+            x = torch.cat(refined, dim=1)
+            for idx in range(7,10):
+                x = self.refiner[idx](x)
 
         # Predict
         for module in self.predictor:
@@ -188,9 +233,15 @@ class FCN(nn.Module):
         - move CPU tensors to GPU
         """
         if type(data) is np.ndarray:
-            return torch.from_numpy(data).float().to(self.device)
+            tensor = torch.from_numpy(data).float().to(self.device)
+            if len(tensor.shape) < 4:
+                tensor = tensor.unsqueeze(1)
+            return tensor
         elif type(data) is torch.Tensor:
-            return data.float().to(self.device)
+            tensor = data.float().to(self.device)
+            if len(tensor.shape) < 4:
+                tensor = tensor.unsqueeze(1)
+            return tensor
         else:
             print("Unknown data type", type(data))
             return None
@@ -236,16 +287,35 @@ class FCN(nn.Module):
         for current_epoch in iterator: #range(epochs):
             running_loss = 0.0
             for data in self.train_dataloader:
-                imgs, labels, identifiers = data
-                imgs, labels = self.prepare_data(imgs), self.prepare_data(labels) # i.e. move to GPU in this case
+                imgs, labels, identifiers, cdc, distances, exact_gt = data
 
                 self.optimizer.zero_grad()
 
-                y = self(imgs)
+                if self.regularity_aware_training:
+                    modified_labels = self.label_modifier((labels == 0).float()) # REMEMBER: Label is DT!
+                    modified_labels = self.dt_modifier(modified_labels)
+
+                    imgs, labels = self.prepare_data(imgs), self.prepare_data(labels) # i.e. move to GPU in this case
+                    modified_labels = self.prepare_data(modified_labels)
+                    inputs = torch.cat([imgs, modified_labels], dim=1)
+                elif self.use_distance_information:
+                    imgs, labels, distances = self.prepare_data(imgs), self.prepare_data(labels), self.prepare_data(distances)
+                    # print(imgs.shape, distances.shape)
+                    inputs = torch.cat([imgs, distances], dim=1)
+                else:
+                    imgs, labels = self.prepare_data(imgs), self.prepare_data(labels) # i.e. move to GPU in this case
+                    inputs = imgs
+
+                y = self(inputs)
 
                 if self.use_MSE_loss:
                     if self.masked_MSE_loss:
-                        loss = self.criterion(imgs, y, labels)
+                        if self.use_class_weights:
+                            loss = self.criterion(imgs, y, labels, 
+                                background_probability=self.train_dataloader.dataset.background_probability,
+                                cone_probability=self.train_dataloader.dataset.cone_probability)
+                        else:
+                            loss = self.criterion(imgs, y, labels)
                     else:
                         loss = self.criterion(y, labels)                 
                 else:
@@ -265,6 +335,11 @@ class FCN(nn.Module):
 
             if avg_run_loss < min_training_loss:
                 min_training_loss = avg_run_loss
+                if self.validation_dataloader is None:
+                    if run_id is not None:
+                        self.save("../nets", stamp)
+                    else:
+                        self.save("../nets", f"fcn_epoch_{(current_epoch+1):03}_loss_{min_training_loss}")
 
             writer.add_scalar('training loss',
                 avg_run_loss,
@@ -276,14 +351,33 @@ class FCN(nn.Module):
                 self.eval()
                 with torch.no_grad():
                     for data in self.validation_dataloader:
-                        imgs, labels, identifiers = data
-                        imgs, labels = self.prepare_data(imgs), self.prepare_data(labels) # i.e. move to GPU in this case
+                        imgs, labels, identifiers, cdc, distances, exact_gt = data                     
 
-                        y = self(imgs)
+                        if self.regularity_aware_training:
+                            modified_labels = self.label_modifier((labels == 0).float()) # REMEMBER: Label is DT!
+                            modified_labels = self.dt_modifier(modified_labels)
+
+                            imgs, labels = self.prepare_data(imgs), self.prepare_data(labels) # i.e. move to GPU in this case
+                            modified_labels = self.prepare_data(modified_labels)
+                            inputs = torch.cat([imgs, modified_labels], dim=1)
+                        elif self.use_distance_information:
+                            imgs, labels, distances = self.prepare_data(imgs), self.prepare_data(labels), self.prepare_data(distances)
+                            inputs = torch.cat([imgs, distances], dim=1)
+                        else:
+                            imgs, labels = self.prepare_data(imgs), self.prepare_data(labels) # i.e. move to GPU in this case
+                            inputs = imgs
+
+                        y = self(inputs)
+                        # y = self(imgs)
 
                         if self.use_MSE_loss:
                             if self.masked_MSE_loss:
-                                loss = self.criterion(imgs, y, labels)
+                                if self.use_class_weights:
+                                    loss = self.criterion(imgs, y, labels, 
+                                        background_probability=self.train_dataloader.dataset.background_probability,
+                                        cone_probability=self.train_dataloader.dataset.cone_probability)
+                                else:
+                                    loss = self.criterion(imgs, y, labels)
                             else:
                                 loss = self.criterion(y, labels)
                         else:
@@ -294,6 +388,10 @@ class FCN(nn.Module):
 
                     if verbose:
                         print("Average running VALIDATION loss for epoch {}: {}".format(current_epoch + 1, avg_run_loss))
+
+                    if self.use_lr_scheduler:
+                        #self.scheduler.step(avg_run_loss)
+                        self.scheduler.step()
 
                     if avg_run_loss < min_validation_loss:
                         min_validation_loss = avg_run_loss
@@ -311,14 +409,43 @@ class FCN(nn.Module):
                 self.train()
 
         # Clean up after training
-        if self.validation_dataloader is None:
-            self.save("../nets", f"fcn_epoch_{(current_epoch+1):03}_loss_{min_training_loss}")
+        # if self.validation_dataloader is None:
+        #     if run_id is not None:
+        #         self.save("../nets", stamp)
+        #     else:
+        #         self.save("../nets", f"fcn_epoch_{(current_epoch+1):03}_loss_{min_training_loss}")
+        #     #self.save("../nets", f"fcn_epoch_{(current_epoch+1):03}_loss_{min_training_loss}")
         writer.close()
 
         return (current_epoch+1), min_training_loss, min_validation_loss
 
     @staticmethod
-    def train_networks_k_fold_cross_validation(dataloaders, max_epochs=100, early_stopping=False):
+    def train_network_single_cross_validation(fold_id, train_dataloader, validation_dataloader, max_epochs=100, lr=3e-4, early_stopping=False, regularity_aware_training=False,
+                                              use_distance_information=False, use_refiner=False, use_lr_scheduler=False):
+        """
+        Train an instance of a FCN using cross validation 
+        for at most the given number of epochs with a single fold.
+
+        Optionally use early stopping.
+        """
+        model = FCN(train_dataloader, validation_dataloader=validation_dataloader, lr=lr, depth=3, input_channels=1, 
+                initial_feature_maps=32, blocks_per_resolution_layer=2, use_MSE_loss=True, masked_MSE_loss=True, use_class_weights=False,
+                regularity_aware_training=regularity_aware_training, use_distance_information=use_distance_information, use_refiner=use_refiner,
+                use_lr_scheduler=use_lr_scheduler)
+            
+        trained_epochs, min_training_loss, min_validation_loss = model.train_network(
+            max_epochs=max_epochs, 
+            run_id=f"fold-{fold_id}", 
+            verbose=False, 
+            early_stopping=early_stopping)
+
+        print(f"Fold {fold_id}: {trained_epochs} epochs, ({min_training_loss},{min_validation_loss})")
+        del model
+        torch.cuda.empty_cache()
+
+    @staticmethod
+    def train_networks_k_fold_cross_validation(dataloaders, max_epochs=100, lr=3e-4, early_stopping=False, regularity_aware_training=False, use_distance_information=False,
+                                               use_refiner=False, use_lr_scheduler=False):
         """
         Train instances of a FCN using k-fold cross validation 
         for at most the given number of epochs on each fold.
@@ -327,8 +454,10 @@ class FCN(nn.Module):
         """
 
         for k, (train_dataloader, validation_dataloader) in enumerate(dataloaders):
-            model = FCN(train_dataloader, validation_dataloader=validation_dataloader, lr=3e-4, depth=3, input_channels=1, 
-                initial_feature_maps=32, blocks_per_resolution_layer=2, use_MSE_loss=True, masked_MSE_loss=True)
+            model = FCN(train_dataloader, validation_dataloader=validation_dataloader, lr=lr, depth=3, input_channels=1, 
+                initial_feature_maps=32, blocks_per_resolution_layer=2, use_MSE_loss=True, masked_MSE_loss=True, use_class_weights=False,
+                regularity_aware_training=regularity_aware_training, use_distance_information=use_distance_information, use_refiner=use_refiner,
+                use_lr_scheduler=use_lr_scheduler)
             
             trained_epochs, min_training_loss, min_validation_loss = model.train_network(
                 max_epochs=max_epochs, 
@@ -339,209 +468,6 @@ class FCN(nn.Module):
             print(f"Fold {k}: {trained_epochs} epochs, ({min_training_loss},{min_validation_loss})")
             del model
             torch.cuda.empty_cache()
-
-    # def test_network(self, threshold=0.0, sigma=1.0, max_h=0.05, dist=2.0, free_border=False, save_all_images=False, distance_transform=False,
-    #     compute_stats=True, cdc=None, dataset="test"):
-    #     """
-    #     Test this instance of a FCN with the given
-    #     parameters
-    #     """
-
-    #     used_dataloader = self.test_dataloader
-    #     if dataset == "train":
-    #         used_dataloader = self.train_dataloader
-    #     if dataset == "validation":
-    #         used_dataloader = self.validation_dataloader
-
-    #     if compute_stats:
-    #         # Accumulators and post-processing constants
-    #         dataset_num = len(used_dataloader.dataset) #len(self.test_dataloader.dataset)
-    #         if cdc is not None:
-    #             tprs, fdrs, dices, chamfers, gt_cones = np.zeros((dataset_num,30)), np.zeros((dataset_num,30)), np.zeros((dataset_num,30)), np.zeros((dataset_num,30)), np.zeros((dataset_num,30))
-    #         else:
-    #             tprs, fdrs, dices, chamfers, gt_cones = np.zeros(dataset_num), np.zeros(dataset_num), np.zeros(dataset_num), np.zeros(dataset_num), np.zeros(dataset_num)
-
-    #     self.eval()
-    #     with torch.no_grad():
-    #         for idx, data in enumerate(used_dataloader): #enumerate(self.test_dataloader):
-    #             imgs, labels, ids = data
-    #             x = self.prepare_data(imgs) # i.e. move to GPU in this case
-    #             y = self(x)
-
-    #             batch_size = len(imgs)
-    #             for i in tqdm(range(batch_size)):
-    #                 # Perform post processing
-    #                 pred, gt = y[i,0,:,:].detach().cpu(), labels[i,0,:,:].detach().cpu()
-
-    #                 if distance_transform:
-    #                     processed = postprocess_dt(pred, threshold)
-    #                     proc = locations_to_mask(processed, size=(gt.shape[0],gt.shape[1]))
-
-    #                     #if compute_stats:
-    #                     #    tpr, fdr, dice = evaluate(proc, gt.numpy() == 0, dist_criterium=dist, hamwoods_free_zone=free_border)
-    #                 else:
-    #                     proc_loc = postprocess(pred, threshold, sigma, max_h)
-    #                     proc = locations_to_mask(proc_loc, size=(gt.shape[0],gt.shape[1]))
-
-    #                     #if compute_stats:
-    #                     #    tpr, fdr, dice = evaluate(proc, gt.numpy(), dist_criterium=dist, hamwoods_free_zone=free_border)
-                    
-    #                 # Regions around CDC
-    #                 if cdc is not None:
-    #                     cy, cx, _ = cdc[cdc[:,2] == idx][0]
-    #                     pixels_per_degree = 600 # 600 is specific to UKB dataset
-    #                     extent = get_maximum_extent(gt.shape[0], gt.shape[1], cy, cx, pixels_per_degree) 
-    #                     #extent = np.min([extent, 15]) # Cut-off
-    #                     #print(extent)
-    #                     gt_log = np.zeros(int(extent))
-    #                     pred_log = np.zeros(int(extent))
-    #                     for eccentricity in range(int(extent)):
-    #                         extent_mask = get_circular_mask(gt.shape[0], gt.shape[1], cy, cx, 
-    #                             arcmin_to_pixels(pixels_per_degree, eccentricity), arcmin_to_pixels(pixels_per_degree, eccentricity + 1))
-    #                         proc_extent = proc * extent_mask
-    #                         if distance_transform:
-    #                             gt_extent = (gt.numpy() == 0) * extent_mask
-    #                         else:
-    #                             gt_extent = gt.numpy() * extent_mask
-                            
-    #                         gt_log[eccentricity] = np.sum(gt_extent)
-    #                         pred_log[eccentricity] = np.sum(proc_extent)
-
-    #                         #print(extent, np.sum(proc), np.sum(gt.numpy()), np.sum(proc_extent), np.sum(gt_extent))
-    #                         if compute_stats:
-    #                             tpr, fdr, dice, chamfer = evaluate(proc_extent, gt_extent, dist_criterium=dist, hamwoods_free_zone=free_border)
-
-    #                             tprs[ids[i],eccentricity] = tpr
-    #                             fdrs[ids[i],eccentricity] = fdr
-    #                             dices[ids[i],eccentricity] = dice
-    #                             chamfers[ids[i],eccentricity] = chamfer
-    #                             gt_cones[ids[i],eccentricity] = np.sum(gt_extent)
-                        
-    #                     xdim = np.arange(int(extent))
-
-    #                     norm = np.pi * (2.0 * xdim + 1)
-    #                     gt_log = gt_log / norm * 60 ** 2 # arcmin^2 to deg^2
-    #                     pred_log = pred_log / norm * 60 ** 2 #arcmin^2 to deg^2
-
-    #                     _ = plt.figure(figsize=(10,5))
-    #                     plt.plot(xdim, gt_log, label="GT")
-    #                     plt.plot(xdim, pred_log, label="PRED")
-    #                     plt.title(f"Image {ids[i]} - Extent {extent:.2f} [arcmin]")
-    #                     plt.ylabel("Radially averaged cone density [cones/deg^2]")
-    #                     plt.xlabel("Eccentricity [arcmin]")
-    #                     plt.legend()
-    #                     plt.savefig(f"figures/temp/cone_density_{ids[i]:06}.png")
-
-    #                     np.savez(f"figures/temp/cone_density_{ids[i]:06}.npz", x=xdim, gt_density=gt_log, pred_density=pred_log)
-    #                 # Whole image
-    #                 else:
-    #                     if compute_stats:
-    #                         if distance_transform:
-    #                             tpr, fdr, dice, chamfer = evaluate(proc, gt.numpy() == 0, dist_criterium=dist, hamwoods_free_zone=free_border)
-    #                         else:
-    #                             tpr, fdr, dice, chamfer = evaluate(proc, gt.numpy(), dist_criterium=dist, hamwoods_free_zone=free_border)
-                    
-    #                 if compute_stats and cdc is None:
-    #                     tprs[ids[i]] = tpr
-    #                     fdrs[ids[i]] = fdr
-    #                     dices[ids[i]] = dice
-    #                     chamfers[ids[i]] = chamfer
-    #                     gt_cones[ids[i]] = np.sum(gt.numpy())
-
-    #                 def mark_cones(image : np.ndarray, mask : np.ndarray, r : int, g : int, b : int):
-    #                     """
-    #                     Mark cone locations in an image
-    #                     """
-    #                     if len(image.shape) == 2:
-    #                         color_image = np.stack([image, image, image])
-    #                     else:
-    #                         color_image = image
-    #                     color_image[0,mask == 1] = r
-    #                     color_image[1,mask == 1] = g
-    #                     color_image[2,mask == 1] = b
-    #                     return color_image #.transpose(1,2,0)
-
-    #                 if save_all_images:
-    #                     plt.imsave(f"figures/temp/postprocessed_{ids[i]:06}.png", proc)
-    #                     plt.imsave(f"figures/temp/image_{ids[i]:06}.png", imgs[i,0,:,:].detach().cpu(), cmap='gray')
-    #                     plt.imsave(f"figures/temp/gt_{ids[i]:06}.png", labels[i,0,:,:].detach().cpu())
-    #                     plt.imsave(f"figures/temp/prediction_{ids[i]:06}.png", y[i,0,:,:].detach().cpu())
-
-    #                     # Abs diff
-    #                     _ = plt.figure(figsize=(5,5), dpi=300)
-    #                     plt.imshow(np.abs(labels[i,0,:,:].detach().cpu() - y[i,0,:,:].detach().cpu()))
-    #                     plt.title(f"Image {ids[i]} - Absolute difference GT and predicted")
-
-    #                     if cdc is not None:
-    #                         cy, cx, _ = cdc[cdc[:,2] == idx][0]
-    #                         plt.plot([cx], [cy], "ro", label="CDC")
-
-    #                     plt.legend()
-    #                     plt.colorbar()
-    #                     plt.savefig(f"figures/temp/abs_diff_pred_gt_{ids[i]:06}.png")
-
-    #                     # Overlay
-    #                     _ = plt.figure(figsize=(8,8), dpi=250)
-
-    #                     img = imgs[i,0,:,:].detach().cpu().numpy()
-    #                     lab = labels[i,0,:,:].detach().cpu().numpy() == 0 if distance_transform else labels[i,0,:,:].detach().cpu().numpy()
-
-    #                     img = mark_cones(img, lab, 0, 0, 255)
-    #                     img = mark_cones(img, proc, 255, 255, 0)
-
-    #                     common = lab * proc
-
-    #                     img = mark_cones(img, common, 0, 255, 0)  
-
-    #                     img = img.transpose(1,2,0)                
-
-    #                     plt.imshow(img)
-    #                     plt.title(f"Image {ids[i]} - GT and PR cone locations")
-
-    #                     plt.plot([], [], "bo", label="GT")
-    #                     plt.plot([], [], "yo", label="PR")
-    #                     plt.plot([], [], "go", label="GT/PR coincide")
-
-    #                     if cdc is not None:
-    #                         cy, cx, _ = cdc[cdc[:,2] == idx][0]
-    #                         plt.plot([cx], [cy], "mo", label="CDC")
-
-    #                     plt.legend()
-    #                     plt.tight_layout()
-    #                     plt.savefig(f"figures/temp/overlay_{ids[i]:06}.png")
-
-    #     self.train()
-        
-    #     if compute_stats:
-    #         np.savez("test.npz", tprs=tprs, fdrs=fdrs, dices=dices, chamfers=chamfers, gt_cones=gt_cones)
-
-    #         if cdc is None:
-    #             avg_tpr = np.sum(tprs) / dataset_num
-    #             avg_fdr = np.sum(fdrs) / dataset_num
-    #             avg_dice = np.sum(dices) / dataset_num
-    #             avg_chamfer = np.sum(chamfers) / dataset_num
-
-    #             std_tpr = np.sqrt(np.sum((tprs - avg_tpr) ** 2) / dataset_num)
-    #             std_fdr = np.sqrt(np.sum((fdrs - avg_fdr) ** 2) / dataset_num)
-    #             std_dice = np.sqrt(np.sum((dices - avg_dice) ** 2) / dataset_num)
-    #             std_chamfer = np.sqrt(np.sum((chamfers - avg_chamfer) ** 2) / dataset_num)
-
-    #             print(f"Input test images: {dataset_num}")
-    #             print(f"Average true positive rate: {avg_tpr} (STD: {std_tpr})")
-    #             print(f"Average false detection rate: {avg_fdr} (STD: {std_fdr})")
-    #             print(f"Average dice coefficient: {avg_dice} (STD: {std_dice})")
-    #             print(f"Average Chamfer distance: {avg_chamfer} (STD: {std_chamfer})")
-
-    #             with open("figures/temp/stats.txt", "w") as f:
-    #                 f.write(f"{dataset_num} input images\n")
-    #                 if distance_transform:
-    #                     f.write(f"Post-processing with threshold={threshold} distance={dist}\n")
-    #                 else:
-    #                     f.write(f"Post-processing with sigma={sigma} threshold={threshold} max_h={max_h} distance={dist}\n")
-    #                 f.write(f"Average true positive rate: {avg_tpr} (STD: {std_tpr})\n")
-    #                 f.write(f"Average false detection rate: {avg_fdr} (STD: {std_fdr})\n")
-    #                 f.write(f"Average dice coefficient: {avg_dice} (STD: {std_dice})\n")
-    #                 f.write(f"Average Chamfer distance: {avg_chamfer} (STD: {std_chamfer})\n")
 
     # def hyperparameter_search(self, dist_criteria, thresholds, sigmas, max_hs, hamwoods_free_zone=False, distance_transform=False):
     #     """
