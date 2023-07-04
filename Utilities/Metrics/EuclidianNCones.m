@@ -144,7 +144,7 @@ classdef EuclidianNCones < DensityMetricBase
         
         function coneArea = GetConeAreas(vorocones)
         %   coneArea = GetConeAreas(vorocones) returns area of each
-        %   cone and number of neighbor cones for each cone.
+        %   cone and number of neighbour cones for each cone.
         %
         %   - vorocones - N*2 vector where first column is X coordinate of N cones,
         %       second column is Y coordinate of N cones.

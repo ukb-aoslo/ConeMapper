@@ -533,7 +533,32 @@ class ParticleBasedPostProcessing():
         for (position, mean, std) in zip(positions, optimal_distances, allowed_deviations):
             patch = get_internal_energy_patch(mean, std)
             y, x = int(np.round(position[0])), int(np.round(position[1]))
-            internal_energy_map[y-patch_size:y+patch_size+1, x-patch_size:x+patch_size+1] += patch # Important: Sum of patches!
+            # mapStartX = x-patch_size
+            # mapStartY = y-patch_size
+            # mapEndX = x+patch_size+1
+            # mapEndY = y+patch_size+1
+            # patchStartY, patchStartX = 0, 0
+            # patchEndY, patchEndX = 2*patch_size+1, 2*patch_size+1
+            # if mapStartY < 0:
+            #     patchStartY = patch_size - y
+            #     mapStartY += patchStartY
+
+            # if mapStartX < 0:
+            #     patchStartX = patch_size - x
+            #     mapStartX += patchStartX
+            
+            # if mapEndY > internal_energy_map.shape[0]:
+            #     patchEndY -=  (mapEndY - internal_energy_map.shape[0])
+            #     mapEndY = internal_energy_map.shape[0]
+
+            # if mapEndX > internal_energy_map.shape[1]:
+            #     patchEndX -= (mapEndX - internal_energy_map.shape[1])
+            #     mapEndX = internal_energy_map.shape[1]
+            if y-patch_size < 0 or x-patch_size < 0 or y+patch_size+1 > internal_energy_map.shape[0] or x+patch_size+1 > internal_energy_map.shape[1]:
+                continue
+            # Important: Sum of patches!
+            # internal_energy_map[mapStartY:y+patch_size+1, mapStartX:x+patch_size+1] += patch[patchStartY:patchEndY, patchStartX:patchEndX]
+            internal_energy_map[y-patch_size:y+patch_size+1, x-patch_size:x+patch_size+1] += patch
 
         return internal_energy_map
 

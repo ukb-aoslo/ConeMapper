@@ -80,20 +80,21 @@ if __name__ == "__main__":
     # parse args
     parser = create_parser()
     args = parser.parse_args()
-    
+
     try:
         # Get image from .npz file
         # image_path = "data/BAK1012L.npz"
         # image = np.load(image_path)["image"] / 255.0
 
         # open image
+        # image = read_image("BAK8044R_2019_04_03_10_31_23_AOSLO_V003_stabilized_840_Cropped.tif")
         image = read_image(args.input)
 
         print("Clipping...")
         image = clip_image(image, clipping_factor=8)
 
         print("Eroding...")
-        image, applied = erode_image(image)
+        image, applied = erode_image(image, iterations=2)
 
         print("Detecting and Post-Processing...")
         cones, raw = detect(image, mode="DT", postprocessing="PBPP")

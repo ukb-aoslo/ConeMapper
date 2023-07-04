@@ -1,6 +1,6 @@
 classdef NNDmean < DensityMetricBase
     %NNDmean calculates the cone density using average of the
-    %distances to the neighbor cones. Neighbor in terms of the Voronoi
+    %distances to the neighbour cones. Neighbor in terms of the Voronoi
     %diagram
     
     % requested input data
@@ -21,7 +21,7 @@ classdef NNDmean < DensityMetricBase
         % by defenition of Voronoi, we are getting here the "small" radius of hex
         DensityMatrixConesPerAreaNotFiltered = [];
         
-        % lists with specific distances of respective cell towards neighbor cells
+        % lists with specific distances of respective cell towards neighbour cells
         AvgDistancesToNeighbors = [];
         StdDistancesToNeighbors = [];
         MinDistancesToNeighbors = [];
@@ -178,7 +178,7 @@ classdef NNDmean < DensityMetricBase
         %   - densityMatrixArea - the density matrix (imageHeight * imageWidth) with values, which represent cones per cone area (in pixels^2).
         %   - densityMatrixAreaFiltered - the density matrix (imageHeight *imageWidth)
         %   with values, which represent cones per cone area (in pixels^2), smoothed by gauss filter.
-        %   - avgDistancesToNeighbors - values with avg distance to neighbor cones,
+        %   - avgDistancesToNeighbors - values with avg distance to neighbour cones,
         %   correspoding to each cone.
             
             conelocs = unique(conelocs, 'rows', 'stable');
@@ -235,7 +235,7 @@ classdef NNDmean < DensityMetricBase
                 neightborLists{indCone} = unique(neighborsTemp);
             end
             
-            % calc neighbor dists average min max and respective cell
+            % calc neighbour dists average min max and respective cell
             % distance standard deviation
             avgDistancesToNeighbors = zeros(numberOfClosedPolygons, 1);
             minDistancesToNeighbors = zeros(numberOfClosedPolygons, 1);
@@ -243,7 +243,7 @@ classdef NNDmean < DensityMetricBase
             stdDistancesToNeighbors = zeros(numberOfClosedPolygons, 1);
 
             for indCone = 1:numberOfClosedPolygons
-                % calculate distances from current cell to all neighbor cells
+                % calculate distances from current cell to all neighbour cells
                 neighborDistances = pdist2(vorocones(indCone, :), vorocones(neightborLists{indCone}, :));
 
                 if isempty(neighborDistances)
