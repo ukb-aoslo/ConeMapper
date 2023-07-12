@@ -10,6 +10,8 @@ from utils.image import clip_image, read_image, erode_image, tensor_to_image, im
 import matplotlib.pyplot as plt
 import argparse
 import pathlib
+import torch
+import traceback
 
 def detect(image : np.ndarray, mode : str = "DT", postprocessing : str = "PBPP"):
     """
@@ -34,10 +36,13 @@ def detect(image : np.ndarray, mode : str = "DT", postprocessing : str = "PBPP")
     else:
         raise "Unknown mode"
 
-    # Feed forward
-    image = image_to_tensor(image).to(fcn.device)
-    pred = fcn(image)[0,0,:,:].detach().cpu()
-    image = image.detach().cpu()
+    # Switch to evaluation mode
+    fcn.eval()
+    with torch.no_grad():
+        # Feed forward
+        image = image_to_tensor(image).to(fcn.device)
+        pred = fcn(image)[0,0,:,:].detach().cpu()
+        image = image.detach().cpu()
 
     # Clip regions outside of ROI
     pred = tensor_to_image(pred)
@@ -78,8 +83,8 @@ def create_parser():
 
 if __name__ == "__main__":
     # parse args
-    parser = create_parser()
-    args = parser.parse_args()
+    # parser = create_parser()
+    # args = parser.parse_args()
 
     try:
         # Get image from .npz file
@@ -87,8 +92,8 @@ if __name__ == "__main__":
         # image = np.load(image_path)["image"] / 255.0
 
         # open image
-        # image = read_image("BAK8044R_2019_04_03_10_31_23_AOSLO_V003_stabilized_840_Cropped.tif")
-        image = read_image(args.input)
+        image = read_image("image1.tif")
+        # image = read_image(args.input)
 
         print("Clipping...")
         image = clip_image(image, clipping_factor=8)
@@ -100,7 +105,7 @@ if __name__ == "__main__":
         cones, raw = detect(image, mode="DT", postprocessing="PBPP")
 
     except Exception as e:
-        print(e)
+        traceback.print_exc()
         output_path_image = ''
         output_path = ''
         result = False
