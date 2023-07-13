@@ -481,6 +481,15 @@ class ParticleBasedPostProcessing():
         distances_map = np.zeros(self.dt.shape)
 
         rounded_positions = np.round(positions).astype(int)
+
+        # delete outsiders positions
+        ousiders_pos = np.where(rounded_positions[:, 0] >= distances_map.shape[0])
+        ousiders_pos1 = np.where(rounded_positions[:, 1] >= distances_map.shape[1])
+        ousiders_pos2 = np.concatenate((ousiders_pos[0], ousiders_pos1[0]), axis=0)
+        rounded_positions = np.delete(rounded_positions, ousiders_pos2, axis=0)
+        local_mean_distances = np.delete(local_mean_distances, ousiders_pos2)
+        local_std_distances = np.delete(local_std_distances, ousiders_pos2)
+        
         distances_map[rounded_positions[:,0], rounded_positions[:,1]] = local_mean_distances - self.beta * 3.0 * local_std_distances
 
         s = nd.generate_binary_structure(2,1)
