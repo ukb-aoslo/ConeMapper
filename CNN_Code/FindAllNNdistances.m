@@ -8,7 +8,7 @@ function [Distances] = FindAllNNdistances(Points)
 %%%%%%
 % Outputs :
 %
-% Distances: vector containing euclidian distance to the nearest neighbor
+% Distances: vector containing euclidean distance to the nearest neighbor
 %       for each point
 %
 %%%%%%
