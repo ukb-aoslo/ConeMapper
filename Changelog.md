@@ -1,3 +1,26 @@
+### 14.09.2023
+ - Fixed:
+    - Misspelling errors: `euclidianNCones` -> `euclidianNCones`; _austosave -> _autosave
+       - If you are using the `EuclidianNCones` class from Cone Mapper App, then either make a backup copy of the   class, or change naming in your scripts to the `EuclideanNCones`.
+       - `euclidianNCones` in Cone Mapper is supported only for reading from file.
+       - For loading EuclideanNCones density data use the next code, because new Cone Mapper version will be saving updates only as `euclideanNCones`.
+       ```
+         filename = "BAKblabla.mat"
+         variableInfo = who('-file', filename);
+
+         % support an old "misspelled" version
+         if ismember('euclidianNCones', variableInfo)
+             load(filename, 'euclidianNCones');
+             euclideanNCones = euclidianNCones;
+         elseif ismember('euclideanNCones', variableInfo)
+             load(filename, 'euclideanNCones');
+         end
+
+         % do something with euclideanNCones 
+       ```
+    - `EuclidianNCones` class has been deleted. `EuclidianNCones` class has been added.
+
+    
 ### 10.03.2023
  - Deleted:
     - Unnecessary versions of CNN
