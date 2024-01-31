@@ -64,7 +64,7 @@ function [newImage] = CreateZScoreMap(densityMap, avgDensMap, stdMap, cdcPoint)
 
 
     % calculate z-score
-    avgDensMap = avgDensMap - density_matrix_plac_temp;
+    avgDensMap = (density_matrix_plac_temp - avgDensMap) ./ stdMap ;
     newImage = avgDensMap(rc_start(2)-edgeStep+1:rc_start(2)+rsdm+edgeStep,rc_start(1)-edgeStep+1:rc_start(1)+csdm+edgeStep);
 end
 

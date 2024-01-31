@@ -17,13 +17,21 @@ classdef ZScoreMap < DensityMetricBase
 %         CDC20_density = 0;
 %         CDC20_loc = [];
 %         Stats2 = [];
+        DensityName = [];
     end
     
     methods
-        function obj = ZScoreMap(inputArg1,inputArg2)
+        function obj = ZScoreMap(densityMap, CDC_loc, stats, PCD_loc, name)
             %ZSCOREMAP Construct an instance of this class
             %   Detailed explanation goes here
-            obj.Property1 = inputArg1 + inputArg2;
+            obj.DensityMatrix = densityMap;
+            [obj.ImageHeight, obj.ImageWidth, ~] = size(densityMap);
+            obj.CDC20_loc = CDC_loc;
+            obj.Stats2 = stats;
+            obj.PCD_loc = PCD_loc;
+            obj.PCD_cppa = densityMap(round(PCD_loc(2)), round(PCD_loc(1)));
+            obj.CDC20_density = densityMap(round(CDC_loc(2)), round(CDC_loc(1)));
+            obj.DensityName = name;
         end
         
         function Recalculate(obj)
