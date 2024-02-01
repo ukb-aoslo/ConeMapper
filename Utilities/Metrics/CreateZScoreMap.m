@@ -56,7 +56,7 @@ function [newImage] = CreateZScoreMap(densityMap, avgDensMap, stdMap, cdcPoint)
 
 
     % Compute mean matrix %%% just include normal matrix
-    rc_start = mean_center-center;
+    rc_start = round(mean_center-center);
     % Compute place of personal density matrix within mean matrix area
     density_matrix_plac_temp = NaN(si);
     density_matrix_plac_temp(rc_start(2)+1:rc_start(2)+rsdm,rc_start(1)+1:rc_start(1)+csdm) = ...
