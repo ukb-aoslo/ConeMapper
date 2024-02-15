@@ -272,6 +272,10 @@ classdef EuclideanNCones < DensityMetricBase
             [rows, cols, ~] = size(BWMap);
             conelocs(conelocs(:, 2) > rows, :) = [];
             conelocs(conelocs(:, 1) > cols, :) = [];
+
+            conelocs(conelocs(:, 2) < 1 , :) = [];
+            conelocs(conelocs(:, 1) < 1 , :) = [];
+
             
             % convert them to linear indicies
             indexes = sub2ind([rows, cols], conelocs(:, 2), conelocs(:, 1));

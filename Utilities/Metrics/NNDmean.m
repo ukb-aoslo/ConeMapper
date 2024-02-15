@@ -183,9 +183,9 @@ classdef NNDmean < DensityMetricBase
             
             conelocs = unique(conelocs, 'rows', 'stable');
             % prepare data for voronoi plot
-            conelocs(conelocs(:,1) < 0, :) = [];
+            conelocs(conelocs(:,1) < 1, :) = [];
             conelocs(conelocs(:,1) > imageWidth, :) = [];
-            conelocs(conelocs(:,2) < 0, :) = [];
+            conelocs(conelocs(:,2) < 1, :) = [];
             conelocs(conelocs(:,2) > imageHeight, :) = [];
 
             boundingPoly = boundary(conelocs(:, 1), conelocs(:, 2), 1);
