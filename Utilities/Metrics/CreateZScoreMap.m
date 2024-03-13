@@ -1,14 +1,14 @@
-function [newImage] = CreateZScoreMap(densityMap, avgDensMap, stdMap, cdcPoint, orientation)
+function [newImage] = CreateZScoreMap(densityMap, avgDensMap, stdMap, cdcPoint)
     edgeStep = 30;
     si = size(avgDensMap);
     mean_center(1) = floor(si(2)/2)+1;
     mean_center(2) = floor(si(1)/2)+1;
 
     % flip maps if we have left eye
-    if strcmp(orientation, 'left')
-        avgDensMap = flip(avgDensMap,2);
-        stdMap = flip(stdMap,2);
-    end
+%     if strcmp(orientation, 'left')
+%         avgDensMap = flip(avgDensMap,2);
+%         stdMap = flip(stdMap,2);
+%     end
     
     [rsdm, csdm] = size(densityMap(edgeStep+1:size(densityMap,1)-edgeStep, edgeStep+1:size(densityMap,2)-edgeStep));
     center = cdcPoint - edgeStep;

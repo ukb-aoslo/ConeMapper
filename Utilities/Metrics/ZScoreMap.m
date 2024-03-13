@@ -18,10 +18,11 @@ classdef ZScoreMap < DensityMetricBase
 %         CDC20_loc = [];
 %         Stats2 = [];
         DensityName = [];
+        EyeOrientation = [];
     end
     
     methods
-        function obj = ZScoreMap(densityMap, CDC_loc, stats, PCD_loc, name)
+        function obj = ZScoreMap(densityMap, CDC_loc, stats, PCD_loc, name, orientation)
             %ZSCOREMAP Construct an instance of this class
             %   Detailed explanation goes here
             obj.DensityMatrix = densityMap;
@@ -32,6 +33,7 @@ classdef ZScoreMap < DensityMetricBase
             obj.PCD_cppa = densityMap(round(PCD_loc(2)), round(PCD_loc(1)));
             obj.CDC20_density = densityMap(round(CDC_loc(2)), round(CDC_loc(1)));
             obj.DensityName = name;
+            obj.EyeOrientation = orientation;
         end
         
         function Recalculate(obj)
