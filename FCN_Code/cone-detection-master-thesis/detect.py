@@ -12,6 +12,7 @@ import argparse
 import pathlib
 import torch
 import traceback
+import sys
 
 def detect(image : np.ndarray, mode : str = "DT", postprocessing : str = "PBPP"):
     """
@@ -110,6 +111,7 @@ if __name__ == "__main__":
         output_path_image = ''
         output_path = ''
         result = False
+        sys.exit(1)
     else:
         result = True
         # save image
@@ -130,7 +132,6 @@ if __name__ == "__main__":
             for data in coordList:
                 # write a row to the csv file
                 writer.writerow(data)
-
     # cones = mask_array(cones, image, better_mask=True, fill=0)
 
     # print("Showing detected cones...")
