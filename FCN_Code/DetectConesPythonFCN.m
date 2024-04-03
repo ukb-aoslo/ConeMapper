@@ -150,7 +150,7 @@ function [data, probMap, res] = DetectConesPythonFCN(image1, path)
                     end
                 end
             else
-                [res_pyhton, ~] = system([pathToEXE, [' "', pathToImage, '"'], ' -o ', ['"', folderPath, '"'], ' -matlab']);
+                [res_pyhton, ~] = system([pathToEXE, [' "', pathToImage, '"'], ' -o ', ['"', folderPath, '"'], ' -matlab'], "-echo");
                 if res_pyhton == 0
                     res_pyhton = true;
                 else
