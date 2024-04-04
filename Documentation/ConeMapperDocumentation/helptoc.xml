@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8' ?>
-<!-- $Date: 2023-07-04 16:22:08 $ -->
+<!-- $Date: 2024-04-04 13:05:56 $ -->
 
 <toc version="2.0">
 
@@ -20,13 +20,13 @@
    <tocitem target="Import-Export.html" image="$toolbox/matlab/icons/book_mat.gif">Import and Export
       <tocitem target="Import-Export.html">Import-Export</tocitem>
    </tocitem>
-   <tocitem target="Metrics.html" image="$toolbox/matlab/icons/book_mat.gif">Metrics
+   <tocitem target="Metrics.html" image="$toolbox/matlab/icons/book_mat.gif">Metrics features
       <tocitem target="Metrics.html">Metrics</tocitem>
       <tocitem target="Statstics window.html">Statstics window</tocitem>
    </tocitem>
    <tocitem target="ConeRepresentation.html" image="$toolbox/matlab/icons/book_mat.gif">Working with image
-      <tocitem target="ConeRepresentation.html">ConeRepresentation</tocitem>
-      <tocitem target="ImageProperties.html">ImageProperties</tocitem>
+      <tocitem target="ConeRepresentation.html">Cone representation</tocitem>
+      <tocitem target="ImageProperties.html">Image properties</tocitem>
    </tocitem>
 </tocitem>
 
