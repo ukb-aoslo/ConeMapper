@@ -1,11 +1,11 @@
 load("AverageDensityEuclideanNConesMap.mat")
 
 filename = "averageRightCM.mat";
-CreateCMFile(filename, averageMapRight, imageMagnificationFactorRight)
+CreateCMFile(filename, averageMapRight, imageMagnificationFactorRight, retinalMagnificationFactorRight)
 filename = "averageLeftCM.mat";
-CreateCMFile(filename, averageMapLeft, imageMagnificationFactorLeft)
+CreateCMFile(filename, averageMapLeft, imageMagnificationFactorLeft, retinalMagnificationFactorLeft)
 
-function CreateCMFile(filename, map, ppd)
+function CreateCMFile(filename, map, ppd, rmf)
     conecount = 0;
     [imH, imW, ~] = size(map);
     I = zeros(imH, imW);
@@ -15,6 +15,7 @@ function CreateCMFile(filename, map, ppd)
     nnd_mean = [];
     yellotsRings = [];
     pixelPerDegree = ppd;
+    RMF = rmf;
     [PCD_cppa, minDensity_cppa, PCD_loc] = DensityMetricBase.GetMinMaxCPPA(map);
     [CDC20_density, CDC20_loc, stats2] = DensityMetricBase.GetCDC(PCD_cppa, map);
     
@@ -40,5 +41,5 @@ function CreateCMFile(filename, map, ppd)
         'GoodPointsEdge', boundaryConelocs);
     
     
-    save(filename, "euclideanNCones", "yellotsRings", "nnd_mean", "rodlocs" ,"eyeType", "conelocs", "I", "conecount","pixelPerDegree");
+    save(filename, "euclideanNCones", "yellotsRings", "nnd_mean", "rodlocs" ,"eyeType", "conelocs", "I", "conecount","pixelPerDegree", "RMF");
 end
