@@ -1,16 +1,16 @@
 load("AverageDensityEuclideanNConesMap.mat")
 
 filename = "averageRightCM.mat";
-CreateCMFile(filename, averageMapRight, imageMagnificationFactorRight, retinalMagnificationFactorRight)
+CreateCMFile(filename, averageMapRight, imageMagnificationFactorRight, retinalMagnificationFactorRight, 'right')
 filename = "averageLeftCM.mat";
-CreateCMFile(filename, averageMapLeft, imageMagnificationFactorLeft, retinalMagnificationFactorLeft)
+CreateCMFile(filename, averageMapLeft, imageMagnificationFactorLeft, retinalMagnificationFactorLeft, 'left')
 
-function CreateCMFile(filename, map, ppd, rmf)
+function CreateCMFile(filename, map, ppd, rmf, type)
     conecount = 0;
     [imH, imW, ~] = size(map);
     I = zeros(imH, imW);
     conelocs = zeros(0, 3);
-    eyeType = 'right';
+    eyeType = type;
     rodlocs = [];
     nnd_mean = [];
     yellotsRings = [];
