@@ -49,7 +49,7 @@ function [avgPixelSpac, interpedSpacMap, interpedConfMap, sumMap, imBox] = FitFo
 
     xStepArray = imBox(1):roiStep:imBox(1) + imBox(3) - roiSize;
     if xStepArray(end) + roiSize < imBox(3)
-        xStepArray = [xStepArray, imComponents.ImageSize(1) - roiSize + 1];
+        xStepArray = [xStepArray, imComponents.ImageSize(2) - roiSize + 1];
     end
 
     if any(imSize(1:2) <= roiSize)

@@ -219,12 +219,12 @@ classdef EuclideanNCones < DensityMetricBase
                     distIDXsorted = originalColumnIndexes(:, coorX - pixelStartX + 1);
                     smallestIdx =  distIDXsorted(1:min([numOfNearestCones, length(distIDXsorted)]));
                     
-                    isBoundingPolyPoint = ismember(smallestIdx, boundingPoly);
+                    isBoundingPolyPoint = ismember(smallestIdx, boundingPoly) | isnan(coneArea(smallestIdx));
                     
                     availiableCones = numOfNearestCones;
                     % if there is at list one cone with extremly big area
                     if any(isBoundingPolyPoint)
-                        isBoundingPolyPoint = ismember(distIDXsorted, boundingPoly);
+                        isBoundingPolyPoint = ismember(distIDXsorted, boundingPoly) | isnan(coneArea(distIDXsorted));
                         distIDXsorted = distIDXsorted(~isBoundingPolyPoint);
                         availiableCones = min([numOfNearestCones, length(distIDXsorted)]);
                         smallestIdx =  distIDXsorted(1:availiableCones);
