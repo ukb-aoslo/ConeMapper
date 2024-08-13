@@ -1,8 +1,8 @@
 load("AverageDensityEuclideanNConesMap.mat")
 
-filename = "averageRightCM.mat";
+filename = "averageRightCM_theSameIMF.mat";
 CreateCMFile(filename, averageMapRight, imageMagnificationFactorRight, retinalMagnificationFactorRight, 'right')
-filename = "averageLeftCM.mat";
+filename = "averageLeftCM_theSameIMF.mat";
 CreateCMFile(filename, averageMapLeft, imageMagnificationFactorLeft, retinalMagnificationFactorLeft, 'left')
 
 function CreateCMFile(filename, map, ppd, rmf, type)
