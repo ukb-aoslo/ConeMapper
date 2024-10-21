@@ -1,6 +1,18 @@
+### 21.10.2024
+ - New features:
+     - Add bull eye graph
+     - Add Average profiles
+     - Add gaussian filter for density contours
+     - Add Z-Score logic
+ - Updated:
+     - Update IMF/RMF logic
+ - Fixed:
+     - Fix min/max calculations
+
+
 ### 14.09.2023
  - Fixed:
-    - Misspelling errors: `euclidianNCones` -> `euclidianNCones`; _austosave -> _autosave
+    - Misspelling errors: `euclidianNCones` -> `euclideanNCones`; _austosave -> _autosave
        - If you are using the `EuclidianNCones` class from Cone Mapper App, then either make a backup copy of the   class, or change naming in your scripts to the `EuclideanNCones`.
        - `euclidianNCones` in Cone Mapper is supported only for reading from file.
        - For loading EuclideanNCones density data use the next code, because new Cone Mapper version will be saving updates only as `euclideanNCones`.
@@ -18,7 +30,7 @@
 
          % do something with euclideanNCones 
        ```
-    - `EuclidianNCones` class has been deleted. `EuclidianNCones` class has been added.
+    - `EuclidianNCones` class has been deleted. `EuclideanNCones` class has been added.
 
     
 ### 10.03.2023
