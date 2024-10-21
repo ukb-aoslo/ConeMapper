@@ -35,7 +35,8 @@ run(fullfile(MatConvNetPath,'matlab','vl_setupnn.m'))
 % DataSet = 'alex training set';
 % DataSet = '41 eye jlr set (black cut)';
 % DataSet = 'julius montages';
-DataSet = 'julius montages2';
+% DataSet = 'julius montages2';
+DataSet = 'hamwoodset';
 
 % load in parameters
  params = get_parameters_Cone_CNN(DataSet);

@@ -127,7 +127,10 @@ class Hamwood(nn.Module):
         """ 
         Load the state of a trained net 
         """
-        self.load_state_dict(torch.load(filepath))
+        if torch.cuda.is_available():
+            self.load_state_dict(torch.load(filepath))
+        else:
+            self.load_state_dict(torch.load(filepath, map_location=torch.device('cpu')))
 
     def _get_parameter_count(self, only_trainable=False):
         return sum(p.numel() for p in self.parameters() if not only_trainable or p.requires_grad)

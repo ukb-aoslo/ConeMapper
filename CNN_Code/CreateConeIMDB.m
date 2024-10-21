@@ -26,9 +26,12 @@ ImageList =  {ImageList.name};
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 numFiles = length(ImageList);
-AllClassLabels = [];
-AllPatches = [];
+% AllClassLabels = tall(zeros(1, 0));
+% AllPatches = tall(zeros(params.PatchSize, params.PatchSize, 1, 0));
+AllClassLabels = zeros(1, 0, "int8");
+AllPatches = zeros(params.PatchSize, params.PatchSize, 1, 0, "uint8");
 
+wbHander = waitbar(0, "Assembling patches...");
 % Loop through each file, and extract patches from each
 for iFile = 1:numFiles
 
@@ -51,22 +54,26 @@ switch params.CoordExt
             ManualPos = round(csvread(CoordPath));
         end
     case '.txt'
-        [x,y] = textread(CoordPath);
-        ManualPos = [x,y];
-        ManualPos = round(ManualPos);
+        testRead = readmatrix(CoordPath);
+
+        ManualPos = round(testRead);
+%         [x,y] = textread(CoordPath);
+%         ManualPos = [x,y];
+%         ManualPos = round(ManualPos);
     otherwise
         error('Please select a known coord extension')     
 end
 
 % Remove manual markings too close to edge
 Invalid = zeros(size(ManualPos,1),1);
+if ~isempty(Invalid)
 Invalid(ManualPos(:,1)<(1+HalfPatchSize)) = 1;
 Invalid(ManualPos(:,1)>(size(Image,2)-HalfPatchSize)) = 1;
 Invalid(ManualPos(:,2)<(1+HalfPatchSize)) = 1;
 Invalid(ManualPos(:,2)>(size(Image,1)-HalfPatchSize)) = 1;
 
 ManualPos(Invalid==1,:) = [];
-
+end
 
 
 %%% Voroni analysis to choose non-cone patches
@@ -75,22 +82,30 @@ VoronoiEdges = [];
 
 if ~isempty(ManualPos) && (length(ManualPos(:, 1)) > 2)
     ManualPos = unique(ManualPos, 'rows');
-    [vx, vy] = voronoi(ManualPos(:,1),ManualPos(:,2));
-
-    % Choose random point on each cell edge
-    RandWeight = rand(1,size(vx,2));
-    VoronoiEdges(:,1) = vx(1,:).*RandWeight + vx(2,:).*(1-RandWeight);
-    VoronoiEdges(:,2) = vy(1,:).*RandWeight + vy(2,:).*(1-RandWeight);
-    VoronoiEdges = round(VoronoiEdges);
-
-    % Remove cases to close to the image boundary
-    Invalid = zeros(size(VoronoiEdges,1),1);
-    Invalid(VoronoiEdges(:,1)<(1+HalfPatchSize)) = 1;
-    Invalid(VoronoiEdges(:,1)>(size(Image,2)-HalfPatchSize)) = 1;
-    Invalid(VoronoiEdges(:,2)<(1+HalfPatchSize)) = 1;
-    Invalid(VoronoiEdges(:,2)>(size(Image,1)-HalfPatchSize)) = 1;
-
-    VoronoiEdges(Invalid==1,:) = [];
+    try
+        [vx, vy] = voronoi(ManualPos(:,1),ManualPos(:,2));
+        
+    
+        % Choose random point on each cell edge
+        RandWeight = rand(1,size(vx,2));
+        VoronoiEdges(:,1) = vx(1,:).*RandWeight + vx(2,:).*(1-RandWeight);
+        VoronoiEdges(:,2) = vy(1,:).*RandWeight + vy(2,:).*(1-RandWeight);
+        VoronoiEdges = round(VoronoiEdges);
+    
+        % Remove cases to close to the image boundary
+        Invalid = zeros(size(VoronoiEdges,1),1);
+        Invalid(VoronoiEdges(:,1)<(1+HalfPatchSize)) = 1;
+        Invalid(VoronoiEdges(:,1)>(size(Image,2)-HalfPatchSize)) = 1;
+        Invalid(VoronoiEdges(:,2)<(1+HalfPatchSize)) = 1;
+        Invalid(VoronoiEdges(:,2)>(size(Image,1)-HalfPatchSize)) = 1;
+    
+        VoronoiEdges(Invalid==1,:) = [];
+    catch ME
+        disp(ME)
+        disp(['filenum: ', num2str(iFile)]);
+        disp(fullfile(params.ImageDirTrain,ImageList{iFile}));
+        
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -113,12 +128,19 @@ for iPatch = 1:numNonCone
     Patches(:,:,iPatch+numManual) = Image(VoronoiEdges(iPatch,2)-HalfPatchSize:VoronoiEdges(iPatch,2)+HalfPatchSize,VoronoiEdges(iPatch,1)-HalfPatchSize:VoronoiEdges(iPatch,1)+HalfPatchSize);
 end
 
+[h1, w1, z1] = size(Patches);
+Patches = cast(reshape(Patches, h1, w1, 1, z1), "uint8");
+% Patches = tall(Patches);
+% ClassLabels = tall(ClassLabels);
 % Save Patches and labels
-AllPatches = cat(3,AllPatches,Patches);
+ClassLabels = cast(ClassLabels, "int8");
+AllPatches = cat(4,AllPatches,Patches);
 AllClassLabels = cat(2,AllClassLabels,ClassLabels);
+
+waitbar(iFile/numFiles, wbHander, "Assembling patches...");
 end
 
-AllPatches = single(uint8(AllPatches));
+% AllPatches = single(uint8(AllPatches));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% Create and Save IMDB File %%%%
@@ -126,8 +148,9 @@ AllPatches = single(uint8(AllPatches));
 
 % Format the data
 images.labels = single(AllClassLabels);
-images.data = reshape(AllPatches, size(AllPatches,1),size(AllPatches,2),1,size(AllPatches,3));
-images.set = ones(size(images.labels));
+images.labels = AllClassLabels;
+images.data = AllPatches; %reshape(AllPatches, size(AllPatches,1),size(AllPatches,2),1,size(AllPatches,3));
+images.set = ones(size(images.labels), "int8");
 
 % Set meta data
 sets{1} = 'train';

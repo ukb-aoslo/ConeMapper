@@ -70,18 +70,34 @@ for iFile = 1:numFiles
     CoordPath = fullfile(params.ManualCoordDirTrain,[BaseName,params.CoordAdditionalText,params.CoordExt]);
     switch params.CoordExt
         case '.csv'
-            ManualPos = csvread(CoordPath);
-        case '.txt'
-            [x,y] = textread(CoordPath);
-            ManualPos = [x,y];
-        otherwise
-            error('Please select a known coord extension')     
+        testRead = readmatrix(CoordPath);
+        if isempty(testRead)
+            ManualPos = zeros(0, 2);
+        else
+            ManualPos = round(csvread(CoordPath));
+        end
+    case '.txt'
+        testRead = readmatrix(CoordPath);
+
+        ManualPos = testRead;
+%         [x,y] = textread(CoordPath);
+%         ManualPos = [x,y];
+%         ManualPos = round(ManualPos);
+    otherwise
+        error('Please select a known coord extension')       
+    end
+
+    if isempty(ManualPos)
+        continue;
     end
 
     % Match CNN to manual
-    NNdistance = FindAllNNdistances(ManualPos);
-    MatchParams.MaxDistance = median(NNdistance)*params.Opt.DistancePercent;
-
+    try
+        NNdistance = FindAllNNdistances(ManualPos);
+        MatchParams.MaxDistance = median(NNdistance)*params.Opt.DistancePercent;
+    catch
+        continue;
+    end
  
     [AutMatchCNN,ManualMatchCNN,AutIndepCNN,ManualIndepCNN] = FindManualConeMatches(CNNPos,ManualPos,MatchParams);
 

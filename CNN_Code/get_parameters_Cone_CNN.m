@@ -1481,6 +1481,72 @@ switch lower(DataSet)
         
         % Set path to load validation probability maps
         params.Results.ProbMapDirValidate = params.ProbMap.SaveDirValidate;
+    case 'hamwoodset' 
+        %%%% General parameters
+        % location of images and coordinate files
+        params.ImageDirTrain = fullfile(BasePath,'Images and Results','HamwoodSet','Training Images');
+        params.ManualCoordDirTrain = fullfile(BasePath,'Images and Results','HamwoodSet','Training Manual Coord');
+        
+        params.ImageDirValidate = fullfile(BasePath,'Images and Results','HamwoodSet','Validation Images');
+        params.ManualCoordDirValidate = fullfile(BasePath,'Images and Results','HamwoodSet','Validation Manual Coord');
+        
+        % Extension on Images
+        params.ImageExt ='.tiff';
+        
+        % Text to add on to base of image names for coord files
+        params.CoordAdditionalText = '';
+        
+        % Format of coord file
+        params.CoordExt = '.csv';
+        
+                
+        %%%%% Parameters for imdb 
+        % Set path to save imdb
+        SaveName = 'imdb-HamwoodSet-ConeCNN.mat';
+        params.imdb.SavePath = fullfile(BasePath,'Images and Results','HamwoodSet',SaveName);
+        
+        
+        %%%%% CNN training parameters
+        % Set path to load imdb
+        params.CNN.imdbPath =  params.imdb.SavePath;
+        
+        % Set path to save network training steps
+        SaveNameNetTrain = 'CNN Training-HamwoodSet';
+        params.CNN.TrainExpDir = fullfile(BasePath,'Images and Results','HamwoodSet',SaveNameNetTrain);
+        
+        % Set path to save final network
+        SaveNameFinalNet = 'net-epoch-45-HamwoodSet-ConeCNN.mat';
+        params.CNN.NetworkSavePath = fullfile(BasePath,'Images and Results','HamwoodSet',SaveNameFinalNet);
+        
+        
+        %%%% Proabability map parameters
+        % Set path to load network
+        params.ProbMap.NetworkPath =  params.CNN.NetworkSavePath;
+        
+        % Set paths to save probability maps
+        params.ProbMap.SaveDirTrain  = fullfile(BasePath,'Images and Results','HamwoodSet','Probability Maps','Training');
+        params.ProbMap.SaveDirValidate  = fullfile(BasePath,'Images and Results','HamwoodSet','Probability Maps','Validation');
+        
+        
+        %%%% Optimization parameters
+        % Set path to load training probability maps
+        params.Opt.ProbMapDirTrain = params.ProbMap.SaveDirTrain;
+        
+        % Set path to save the optimization results
+        SaveNameOpt = 'DetectionOptimization-HamwoodSet-ConeCNN.mat';
+        params.Opt.SavePath = fullfile(BasePath,'Images and Results','HamwoodSet',SaveNameOpt);
+        
+        
+        %%%%% Validation result parameters
+        % Set path for loading optimization results
+        params.Results.OptimizationPath = params.Opt.SavePath;
+        
+        % Set path for saving detected cones from validation set
+        SaveNameVal = 'Validation CNN Coord';
+        params.Results.SaveDir = fullfile(BasePath,'Images and Results','HamwoodSet',SaveNameVal);
+        
+        % Set path to load validation probability maps
+        params.Results.ProbMapDirValidate = params.ProbMap.SaveDirValidate;
     otherwise
         error('Please select a known data set or add your own case')      
 end

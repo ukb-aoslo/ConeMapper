@@ -30,18 +30,24 @@ function [data, probMap, res] = DetectConesPythonFCN(image1, path)
     jp = wbch(1).JavaPeer;
     jp.setIndeterminate(1);
 
-    % create Python environment
-    pyenv1 = pyenv("ExecutionMode","OutOfProcess");
-    
     folderPath = [path, filesep(), 'tempData'];
     [~, ~, ~] = mkdir(folderPath);
 
     % get current path
+    % current path is where this script is!
     currentFile = mfilename( 'fullpath' );
     [currentPath, ~, ~] = fileparts( currentFile );
     % get path to python script
-    pathToScript = [currentPath, filesep(), 'cone-detection-master-thesis'];
+    pathToScript = fullfile(currentPath, 'cone-detection-master-thesis');
     cd(pathToScript);
+
+    % check if there is compiled .exe
+    pathToEXE = fullfile(pathToScript, 'dist', 'detect', 'detect.exe');
+
+    if ~isfile(pathToEXE)
+        % create Python environment
+        pyenv1 = pyenv("ExecutionMode","OutOfProcess");
+    end
 
     dividerH = 2;
     dividerW = 2;
@@ -132,10 +138,29 @@ function [data, probMap, res] = DetectConesPythonFCN(image1, path)
             pathToImage = [path, filesep(), 'tempData', filesep(), 'imageTile_', num2str(iRow), '_', num2str(iColumn), '.tif'];
             imwrite(imageTile, pathToImage);
         
-            % run script
-            [output_path_image, output_path, res_pyhton] = pyrunfile(...
-                ['detect.py ', ['"', pathToImage, '"'], ' -o ', ['"', folderPath, '"'], ' -matlab'],...
-                ["output_path_image", "output_path", "result"]);
+            if ~isfile(pathToEXE)
+                % run script
+                try
+                    [output_path_image, output_path, res_pyhton] = pyrunfile(...
+                        ['detect.py ', ['"', pathToImage, '"'], ' -o ', ['"', folderPath, '"'], ' -matlab'],...
+                        ["output_path_image", "output_path", "result"]);
+                catch PyME
+                    if ~strcmp(PyME.message, 'Python Error: SystemExit: 0')
+                        rethrow(PyME);
+                    end
+                end
+            else
+                [res_pyhton, ~] = system([pathToEXE, [' "', pathToImage, '"'], ' -o ', ['"', folderPath, '"'], ' -matlab'], "-echo");
+                if res_pyhton == 0
+                    res_pyhton = true;
+                else
+                    res_pyhton = false;
+                end
+
+                [~, imageName, ~] = fileparts(pathToImage);
+                output_path_image = [folderPath, filesep(), imageName, '_probMap.png'];
+                output_path = [folderPath, filesep(), imageName, '.csv'];
+            end
             
             % if result was successful
             if res_pyhton
@@ -171,8 +196,12 @@ function [data, probMap, res] = DetectConesPythonFCN(image1, path)
         imwrite(probMap, pathToImage);
     end
     % go back to current path
+    [currentPath, ~, ~] = fileparts(currentPath);
     cd(currentPath);
-    terminate(pyenv1);
+
+    if ~isfile(pathToEXE)
+        terminate(pyenv1);
+    end
     close(wb);
 end
 
