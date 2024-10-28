@@ -84,8 +84,8 @@ def create_parser():
 
 if __name__ == "__main__":
     # parse args
-    # parser = create_parser()
-    # args = parser.parse_args()
+    parser = create_parser()
+    args = parser.parse_args()
 
     try:
         # Get image from .npz file
@@ -94,8 +94,8 @@ if __name__ == "__main__":
 
         # open image
         # image values MUST BE in [0, 1] limits, otherwise CNN will produce garbadge!
-        image = read_image("image1.tif") / 255.0
-        # image = read_image(args.input) / 255.0
+        # image = read_image("image1.tif") / 255.0
+        image = read_image(args.input) / 255.0
 
         print("Clipping...")
         image = clip_image(image, clipping_factor=8)
