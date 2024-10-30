@@ -1,7 +1,7 @@
-# Cone finder
+# Cone Mapper
 
 ## Description
-Cone finder is the programm, based on MarkCones_CNN.
+Cone Mapper is the programm, based on MarkCones_CNN.
 Written on Matlab R2022b App Designer.
 The program allows to annotate AOSLO images semi-automaticaly and make basic analysis.
 The documentation is availiable in Cone Mapper: *Help -> Show documentation*, or _./Documentation/*.mlx_ files.
