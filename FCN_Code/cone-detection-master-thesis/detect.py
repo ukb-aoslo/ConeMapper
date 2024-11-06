@@ -14,6 +14,8 @@ import torch
 import traceback
 import sys
 
+pretrained_model_path = "pretrained_models/DT-0.16-dilation-1-300-epochs.pth"
+
 def detect(image : np.ndarray, mode : str = "DT", postprocessing : str = "PBPP"):
     """
     Detect cones in an retinal image
@@ -33,7 +35,7 @@ def detect(image : np.ndarray, mode : str = "DT", postprocessing : str = "PBPP")
 
     if mode.upper() == "DT":
         fcn = FCN(None, lr=3e-4, depth=3, input_channels=1, initial_feature_maps=32, blocks_per_resolution_layer=2, use_MSE_loss=True, masked_MSE_loss=True)
-        fcn.load("pretrained_models/DT-0.16-dilation-1-300-epochs.pth")
+        fcn.load(pretrained_model_path)
     else:
         raise "Unknown mode"
 
