@@ -101,7 +101,7 @@ function [data, probMap, res] = DetectConesPythonFCN(image1, path)
 
     % allocate the output variables
     data = zeros(0, 2);
-    probMap = zeros(height, width);
+    probMap = uint8(zeros(height, width));
 
 
     try
@@ -117,11 +117,11 @@ function [data, probMap, res] = DetectConesPythonFCN(image1, path)
                 if (iRow ~= 1)
                     currentTileStartH = currentTileStartH + tileHeight + 1;
                 end
-                currentTileEndH = currentTileStartH + tileHeight;
+                currentTileEndH = currentTileStartH + tileHeight + 10;
             else
                 currentTileStartW = currentTileStartW + tileWidth + 1;
             end
-            currentTileEndW = currentTileStartW + tileWidth;
+            currentTileEndW = currentTileStartW + tileWidth + 10;
     
             if (iRow == dividerH)
                 currentTileEndH = height;
@@ -167,7 +167,7 @@ function [data, probMap, res] = DetectConesPythonFCN(image1, path)
                 res = res && res_pyhton;
                 dataPython = readmatrix(char(output_path));
                 dataPython(:, 1) = dataPython(:, 1) + currentTileStartW - 1;
-                dataPython(:, 1) = dataPython(:, 1) + currentTileStartH - 1;
+                dataPython(:, 2) = dataPython(:, 2) + currentTileStartH - 1;
                 data = [data; dataPython];
                 probMapPython = imread(char(output_path_image));
         
