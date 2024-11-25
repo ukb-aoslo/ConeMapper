@@ -58,9 +58,9 @@ def create_split(input_path,
             indices_per_type = [indices[:num_validation], indices[num_validation:num_validation+num_test], indices[num_validation+num_test:]]
 
         # Enumerate subsets
-        for idx, type in enumerate(types):    
+        for idx, data_type in enumerate(types):    
             # Create subfolder  
-            os.makedirs(os.path.join(output_path,type)) 
+            os.makedirs(os.path.join(output_path,data_type)) 
 
             # Create .npz files
             for index in indices_per_type[idx]:
@@ -70,7 +70,7 @@ def create_split(input_path,
 
                 # Load .mat file
                 files = sorted(os.listdir(os.path.join(input_path, subjects[index])))  
-                mat_file = files[1] # First file = image, second file = mat
+                mat_file = files[0] # First file = image, second file = mat
                 mat_file_path = os.path.join(input_path, subjects[index], mat_file)
                 mat = loadmat(mat_file_path)
 
@@ -79,7 +79,7 @@ def create_split(input_path,
                 image = mat["I"]
 
                 # Save exact locations
-                #exact_npz_file_path = os.path.join(output_path, type, f"{subjects[index]}_exact.npz")
+                #exact_npz_file_path = os.path.join(output_path, data_type, f"{subjects[index]}_exact.npz")
                 exact_gt = mat["conelocs"][:,:2] - 1
                 exact_gt[:,[0,1]] = exact_gt[:,[1,0]] # (x,y) to (y,x)
                 #np.savez(exact_npz_file_path, cones=exact_gt)
@@ -88,7 +88,10 @@ def create_split(input_path,
                 locations = np.round(mat["conelocs"][:,:2] - 1).astype(int)
                 label = np.zeros(image.shape)
                 label[locations[:,1], locations[:,0]] = 1 # labels are in (x,y) format instead of (y,x)!
-                cdc20 = mat["euclidianNCones"]["CDC20_loc"][0,0] # Get array from object
+                try:
+                    cdc20 = mat["euclideanNCones"]["CDC20_loc"][0,0] # Get array from object
+                except:
+                    cdc20 = [[0,0]]
                 background_probability = np.sum(label == 0)
                 cone_probability = np.sum(label == 1)
                 background_probability, cone_probability = background_probability / (background_probability + cone_probability), cone_probability / (background_probability + cone_probability)
@@ -99,7 +102,7 @@ def create_split(input_path,
                     label = applied_to[0]
 
                 # Save .npz file
-                npz_file_path = os.path.join(output_path, type, f"{subjects[index]}.npz")
+                npz_file_path = os.path.join(output_path, data_type, f"{subjects[index]}.npz")
                 np.savez(npz_file_path, image=image, label=label, cdc20=cdc20, exact_gt=exact_gt, background_probability=background_probability, cone_probability=cone_probability)
     else:
         print(f"Dataset {output_path} has already been created")
