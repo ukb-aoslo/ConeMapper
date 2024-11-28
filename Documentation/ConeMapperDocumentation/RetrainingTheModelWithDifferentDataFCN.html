@@ -1,0 +1,76 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,IE=9,chrome=1"><meta name="generator" content="MATLAB 2022b"><title>Retraining the model with different data FCN</title><style type="text/css">.rtcContent { padding: 30px; } .S0 { margin: 3px 10px 5px 4px; padding: 0px; line-height: 28.8px; min-height: 0px; white-space: pre-wrap; color: rgb(192, 76, 11); font-family: Helvetica, Arial, sans-serif; font-style: normal; font-size: 24px; font-weight: 400; text-align: left;  }
+.S1 { margin: 20px 10px 5px 4px; padding: 0px; line-height: 20px; min-height: 0px; white-space: pre-wrap; color: rgb(33, 33, 33); font-family: Helvetica, Arial, sans-serif; font-style: normal; font-size: 20px; font-weight: 700; text-align: left;  }
+.S2 { margin: 2px 10px 9px 4px; padding: 0px; line-height: 21px; min-height: 0px; white-space: pre-wrap; color: rgb(33, 33, 33); font-family: Helvetica, Arial, sans-serif; font-style: normal; font-size: 14px; font-weight: 400; text-align: left;  }
+.S3 { margin: 10px 0px 20px; padding-left: 0px; font-family: Helvetica, Arial, sans-serif; font-size: 14px;  }
+.S4 { margin-left: 56px; line-height: 21px; min-height: 0px; text-align: left; white-space: pre-wrap;  }
+.CodeBlock { background-color: #F5F5F5; margin: 10px 0 10px 0; }
+.S5 { border-left: 1px solid rgb(191, 191, 191); border-right: 1px solid rgb(191, 191, 191); border-top: 1px solid rgb(191, 191, 191); border-bottom: 0px none rgb(33, 33, 33); border-radius: 4px 4px 0px 0px; padding: 6px 45px 0px 13px; line-height: 18.004px; min-height: 0px; white-space: nowrap; color: rgb(33, 33, 33); font-family: Menlo, Monaco, Consolas, "Courier New", monospace; font-size: 14px;  }
+.S6 { border-left: 1px solid rgb(191, 191, 191); border-right: 1px solid rgb(191, 191, 191); border-top: 0px none rgb(33, 33, 33); border-bottom: 0px none rgb(33, 33, 33); border-radius: 0px; padding: 0px 45px 0px 13px; line-height: 18.004px; min-height: 0px; white-space: nowrap; color: rgb(33, 33, 33); font-family: Menlo, Monaco, Consolas, "Courier New", monospace; font-size: 14px;  }
+.S7 { border-left: 1px solid rgb(191, 191, 191); border-right: 1px solid rgb(191, 191, 191); border-top: 0px none rgb(33, 33, 33); border-bottom: 1px solid rgb(191, 191, 191); border-radius: 0px 0px 4px 4px; padding: 0px 45px 4px 13px; line-height: 18.004px; min-height: 0px; white-space: nowrap; color: rgb(33, 33, 33); font-family: Menlo, Monaco, Consolas, "Courier New", monospace; font-size: 14px;  }
+.S8 { border-left: 1px solid rgb(191, 191, 191); border-right: 1px solid rgb(191, 191, 191); border-top: 1px solid rgb(191, 191, 191); border-bottom: 1px solid rgb(191, 191, 191); border-radius: 4px; padding: 6px 45px 4px 13px; line-height: 18.004px; min-height: 0px; white-space: nowrap; color: rgb(33, 33, 33); font-family: Menlo, Monaco, Consolas, "Courier New", monospace; font-size: 14px;  }
+.S9 { margin: 10px 10px 9px 4px; padding: 0px; line-height: 21px; min-height: 0px; white-space: pre-wrap; color: rgb(33, 33, 33); font-family: Helvetica, Arial, sans-serif; font-style: normal; font-size: 14px; font-weight: 400; text-align: left;  }</style></head><body><div class = rtcContent><h1  class = 'S0'><span>Retraining the model with different data FCN</span></h1><h2  class = 'S1'><span style=' font-weight: bold; font-family: monospace;'>Introduction</span></h2><div  class = 'S2'><span>It is possible to train FCN on another dataset. It may improve the FCN results for your type of images.</span></div><h2  class = 'S1'><span>Folder and data structure</span></h2><div  class = 'S2'><span>In order to do so, you need to have your data as MATLAB file with structure, similar to Cone Mapper files.</span></div><div  class = 'S2'><span>Necessary fields are </span></div><ul  class = 'S3'><li  class = 'S4'><span>"I" - grayscale image as 2d array of uint8 values in range 0-255.</span></li><li  class = 'S4'><span style=' font-family: monospace;'>"conelocs</span><span>'' - locations of the cones as 2d array of doubles with Nx2 size, where N - the number of cones.</span></li></ul><div  class = 'S2'><span>The structure of the data files should be the next:</span></div><div class="CodeBlock"><div class="inlineWrapper"><div  class = 'S5'><span style="white-space: pre"><span >data_folder</span></span></div></div><div class="inlineWrapper"><div  class = 'S6'><span style="white-space: pre"><span >|-subject1_folder</span></span></div></div><div class="inlineWrapper"><div  class = 'S6'><span style="white-space: pre"><span >    |-subject1.mat</span></span></div></div><div class="inlineWrapper"><div  class = 'S6'><span style="white-space: pre"><span >|-subject2_folder</span></span></div></div><div class="inlineWrapper"><div  class = 'S7'><span style="white-space: pre"><span >    |-subject2.mat</span></span></div></div></div><h2  class = 'S1'><span>Data preparation</span></h2><div  class = 'S2'><span>There are 2 Jupiter books in </span></div><div class="CodeBlock"><div class="inlineWrapper"><div  class = 'S8'><span style="white-space: pre"><span >{ConeMapperFolder}/FCN_Code/cone-detection-master-thesis/notebooks</span></span></div></div></div><div  class = 'S9'><span>The data.ipynb allows to prepare the data for training. </span></div><div  class = 'S2'><span>The first block divides the data into sets, erodes it and crops into 256*256 tiles. The user should write proper pathes for each function. For output path: if path exists, then nothing will be done. Depending on which training will be used (with or without cross-validation) will be created 2 or 3 sets (train, test or train, test, validation).</span></div><div  class = 'S2'><span>The second block is optional. It allows to add blur and noise into the data.</span></div><div  class = 'S2'><span>The third block is also optional. It allows to check the GT data coverage.</span></div><h2  class = 'S1'><span>Training</span></h2><div  class = 'S2'><span>The train.ipynb contains scripts to run the training process of the FCN.</span></div><div  class = 'S2'><span>The first block is for training without cross-validation. </span></div><div  class = 'S2'><span>The second block is for training with cross-validation.</span></div><div  class = 'S2'><span>To replicate the current results, it is recommended to use  cross-validation.</span></div><div  class = 'S2'><span>User must to properly setup the input and output pathes.</span></div><h2  class = 'S1'><span>Including the retrained model into Cone Mapper</span></h2><div  class = 'S2'><span>After training is finished you must setup the proper path to the model in detect.py (line 17)</span></div><div class="CodeBlock"><div class="inlineWrapper"><div  class = 'S8'><span style="white-space: pre"><span >pretrained_model_path = </span><span style="color: rgb(167, 9, 245);">"{your_model_path}"</span></span></div></div></div><div  class = 'S9'><span>It is better to keep models in </span></div><div class="CodeBlock"><div class="inlineWrapper"><div  class = 'S8'><span style="white-space: pre"><span >{ConeMapperFolder}/FCN_Code/cone-detection-master-thesis/pretrained_models</span></span></div></div></div><div  class = 'S9'><span>When it is done, the FCN will be using the new model for the recognition process.</span></div>
+<br>
+<!-- 
+##### SOURCE BEGIN #####
+%% Retraining the model with different data FCN
+%% |*Introduction*|
+% It is possible to train FCN on another dataset. It may improve the FCN results 
+% for your type of images.
+%% Folder and data structure
+% In order to do so, you need to have your data as MATLAB file with structure, 
+% similar to Cone Mapper files.
+% 
+% Necessary fields are 
+%% 
+% * "I" - grayscale image as 2d array of uint8 values in range 0-255.
+% * |"conelocs|'' - locations of the cones as 2d array of doubles with Nx2 size, 
+% where N - the number of cones.
+%% 
+% The structure of the data files should be the next:
+
+data_folder
+|-subject1_folder
+    |-subject1.mat
+|-subject2_folder
+    |-subject2.mat
+%% Data preparation
+% There are 2 Jupiter books in 
+
+{ConeMapperFolder}/FCN_Code/cone-detection-master-thesis/notebooks
+%% 
+% The data.ipynb allows to prepare the data for training. 
+% 
+% The first block divides the data into sets, erodes it and crops into 256*256 
+% tiles. The user should write proper pathes for each function. For output path: 
+% if path exists, then nothing will be done. Depending on which training will 
+% be used (with or without cross-validation) will be created 2 or 3 sets (train, 
+% test or train, test, validation).
+% 
+% The second block is optional. It allows to add blur and noise into the data.
+% 
+% The third block is also optional. It allows to check the GT data coverage.
+%% Training
+% The train.ipynb contains scripts to run the training process of the FCN.
+% 
+% The first block is for training without cross-validation. 
+% 
+% The second block is for training with cross-validation.
+% 
+% To replicate the current results, it is recommended to use  cross-validation.
+% 
+% User must to properly setup the input and output pathes.
+%% Including the retrained model into Cone Mapper
+% After training is finished you must setup the proper path to the model in 
+% detect.py (line 17)
+
+pretrained_model_path = "{your_model_path}"
+%% 
+% It is better to keep models in 
+
+{ConeMapperFolder}/FCN_Code/cone-detection-master-thesis/pretrained_models
+%% 
+% When it is done, the FCN will be using the new model for the recognition process.
+##### SOURCE END #####
+-->
+</div></body></html>

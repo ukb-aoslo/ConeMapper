@@ -1,34 +1,34 @@
 <?xml version='1.0' encoding='utf-8' ?>
-<!-- $Date: 2024-11-25 15:01:05 $ -->
+<!-- $Date: 2024-11-28 12:08:06 $ -->
 
 <toc version="2.0">
 
 <tocitem target="Welcome to Cone Mapper.html" image="$toolbox/matlab/icons/book_mat.gif">Cone Mapper
    <tocitem target="Welcome to Cone Mapper.html">Welcome to Cone Mapper</tocitem>
    <tocitem target="ConeMapperFileStructure.html" image="$toolbox/matlab/icons/book_mat.gif">Basics
-      <tocitem target="ConeMapperFileStructure.html">Cone Mapper File Structure</tocitem>
-      <tocitem target="HotKeys.html">Hot Keys</tocitem>
-      <tocitem target="InterfaceAndSettings.html">Interface and Settings</tocitem>
+      <tocitem target="ConeMapperFileStructure.html">Cone Mapper file structure</tocitem>
+      <tocitem target="HotKeys.html">HotKeys</tocitem>
+      <tocitem target="InterfaceAndSettings.html">Interface and settings</tocitem>
       <tocitem target="Layers.html">Layers</tocitem>
       <tocitem target="WorkFlow.html">WorkFlow</tocitem>
    </tocitem>
    <tocitem target="ConeRecognition.html" image="$toolbox/matlab/icons/book_mat.gif">Cone recognition
-      <tocitem target="ConeRecognition.html">Cone Recognition</tocitem>
+      <tocitem target="ConeRecognition.html">Cone recognition</tocitem>
       <tocitem target="HowToCompileCNN(forCunefare).html">How to compile CNN (for Cunefare)</tocitem>
       <tocitem target="HowToMakeFCNrunning.html">How to make FCN running</tocitem>
-      <tocitem target="HowToTrainCNN(Cunefare).html">How to train CNN (Cunefare)</tocitem>
-      <tocitem target="HowToTrainFCN.html">How to train FCN</tocitem>
+      <tocitem target="RetrainingTheModelWithDifferentDataCNN(Cunefare).html">Retraining the model CNN (Cunefare)</tocitem>
+      <tocitem target="RetrainingTheModelWithDifferentDataFCN.html">Retraining the model FCN</tocitem>
    </tocitem>
    <tocitem target="Import-Export.html" image="$toolbox/matlab/icons/book_mat.gif">Import and Export
       <tocitem target="Import-Export.html">Import-Export</tocitem>
    </tocitem>
    <tocitem target="AvailiableMetrics.html" image="$toolbox/matlab/icons/book_mat.gif">Metrics
-      <tocitem target="AvailiableMetrics.html">Availiable Metrics</tocitem>
-      <tocitem target="StatsticsWindow.html">Statstics Window</tocitem>
+      <tocitem target="AvailiableMetrics.html">Availiable metrics</tocitem>
+      <tocitem target="StatsticsWindow.html">Statstics window</tocitem>
    </tocitem>
    <tocitem target="ConeRepresentation.html" image="$toolbox/matlab/icons/book_mat.gif">Working with image
-      <tocitem target="ConeRepresentation.html">Cone Representation</tocitem>
-      <tocitem target="ImageProperties.html">Image Properties</tocitem>
+      <tocitem target="ConeRepresentation.html">Cone representation</tocitem>
+      <tocitem target="ImageProperties.html">Image properties</tocitem>
    </tocitem>
 </tocitem>
 
